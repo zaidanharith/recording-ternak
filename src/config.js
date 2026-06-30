@@ -3,7 +3,7 @@ require('dotenv').config();
 const config = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
   },
 
   sheets: {
@@ -13,7 +13,9 @@ const config = {
   },
 
   whatsapp: {
-    chromePath: process.env.CHROME_PATH,
+    accessToken: process.env.WA_ACCESS_TOKEN,
+    phoneNumberId: process.env.WA_PHONE_NUMBER_ID,
+    verifyToken: process.env.WA_VERIFY_TOKEN,
   },
 
   dataSchema: {

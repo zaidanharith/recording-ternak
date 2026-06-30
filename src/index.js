@@ -1,64 +1,48 @@
-const { initWhatsApp } = require('./whatsapp');
-const { parseMessage } = require('./gemini');
-const { appendRow } = require('./sheets');
+require('dotenv').config();
+const http = require('http');
+const url = require('url');
+const webhookHandler = require('../api/webhook');
 
-const formatTimestamp = () => {
-  return new Date().toLocaleString('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+const server = http.createServer((req, res) => {
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  req.query = Object.fromEntries(parsedUrl.searchParams);
+
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
   });
-};
 
-const buildSuccessReply = (data) => {
-  const lines = [
-    '✅ *Laporan ternak berhasil dicatat!*',
-    '',
-    `🐄 *Jenis Ternak:* ${data.jenis_ternak}`,
-    `👤 *Pemilik:* ${data.nama_pemilik}`,
-    `🏷️ *ID Hewan:* ${data.id_hewan}`,
-    `❤️ *Kondisi:* ${data.kondisi_kesehatan}`,
-    `💊 *Tindakan:* ${data.tindakan}`,
-    '',
-    '_Data telah tersimpan di Google Spreadsheet._',
-  ];
-  return lines.join('\n');
-};
-
-const handleMessage = async (message) => {
-  if (message.fromMe) return;
-
-  const contact = await message.getContact();
-  const senderName = contact.pushname || contact.number || message.from;
-
-  console.log(`📩 Pesan dari ${senderName}: "${message.body}"`);
-
-  try {
-    const parsed = await parseMessage(message.body, senderName);
-
-    if (parsed.bukan_laporan_ternak) {
-      console.log(`⏭️  Pesan bukan laporan ternak (${parsed.alasan}). Dilewati.\n`);
-      return;
+  req.on('end', async () => {
+    try {
+      if (body) {
+        req.body = JSON.parse(body);
+      }
+    } catch (e) {
+      req.body = {};
     }
 
-    const timestamp = formatTimestamp();
-    const rowData = {
-      ...parsed,
-      timestamp,
-      pengirim: senderName,
+    res.status = (statusCode) => {
+      res.statusCode = statusCode;
+      return res;
     };
 
-    await appendRow(rowData);
-    console.log(`✅ Data berhasil dicatat ke Google Sheets.\n`);
+    res.send = (data) => {
+      res.end(data);
+      return res;
+    };
 
-    await message.reply(buildSuccessReply(parsed));
-  } catch (error) {
-    console.error(`❌ Error memproses pesan dari ${senderName}:`, error.message);
-  }
-};
+    res.json = (data) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(data));
+      return res;
+    };
 
-console.log('🚀 Memulai backend recording ternak...\n');
-initWhatsApp(handleMessage);
+    await webhookHandler(req, res);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Local test server running on port ${PORT}`);
+  console.log(`👉 Webhook URL: http://localhost:${PORT}/api/webhook`);
+});
