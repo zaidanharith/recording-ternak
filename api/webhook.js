@@ -15,17 +15,24 @@ const formatTimestamp = () => {
 };
 
 const buildSuccessReply = (data) => {
+  const jantan = data.jumlah_anak_jantan !== '-' ? data.jumlah_anak_jantan : '-';
+  const betina = data.jumlah_anak_betina !== '-' ? data.jumlah_anak_betina : '-';
   const lines = [
-    '✅ *Laporan ternak berhasil dicatat!*',
+    '✅ *Data kambing berhasil dicatat!*',
     '',
-    `🐄 *Jenis Ternak:* ${data.jenis_ternak}`,
-    `👤 *Pemilik:* ${data.nama_pemilik}`,
-    `🏷️ *ID Hewan:* ${data.id_hewan}`,
-    `❤️ *Kondisi:* ${data.kondisi_kesehatan}`,
-    `💊 *Tindakan:* ${data.tindakan}`,
+    `👤 *Nama Peternak:* ${data.nama_peternak ?? '-'}`,
+    `🏷️ *No. Telinga/Ternak:* ${data.nomor_telinga ?? '-'}`,
+    `📍 *Alamat:* ${data.alamat ?? '-'}`,
+    `💑 *Tanggal Kawin:* ${data.tanggal_kawin ?? '-'}`,
+    `🐣 *Tanggal Beranak:* ${data.tanggal_beranak ?? '-'}`,
+    `♂️ *Anak Jantan:* ${jantan}  |  ♀️ *Anak Betina:* ${betina}`,
+    `🔢 *Perkawinan Ke:* ${data.perkawinan_ke ?? '-'}`,
+    `🎯 *Target Penjualan:* ${data.target_penjualan ?? '-'}`,
+    `💰 *Terjual:* ${data.terjual ?? '-'}`,
+    data.catatan && data.catatan !== '-' ? `📝 *Catatan:* ${data.catatan}` : null,
     '',
     '_Data telah tersimpan di Google Spreadsheet._',
-  ];
+  ].filter((line) => line !== null);
   return lines.join('\n');
 };
 

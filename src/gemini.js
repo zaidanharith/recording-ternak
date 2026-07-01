@@ -11,7 +11,10 @@ const buildSchemaDescription = () =>
     .join('\n');
 
 const buildPrompt = (messageText, senderName) => `
-Kamu adalah sistem pencatat hewan ternak. Tugasmu adalah mengekstrak informasi dari laporan peternak yang ditulis dalam bahasa Indonesia (termasuk bahasa daerah/campuran) dengan format bebas.
+Kamu adalah sistem pencatat data breeding (reproduksi) dan penjualan TERNAK KAMBING milik kelompok peternak kambing.
+Tugasmu adalah mengekstrak informasi dari laporan peternak yang ditulis dalam bahasa Indonesia (termasuk bahasa daerah/campuran) dengan format bebas.
+
+PENTING: Sistem ini HANYA mencatat laporan tentang ternak KAMBING. Jika pesan menyebut hewan selain kambing (misal: sapi, domba, ayam, dll.), perlakukan sebagai bukan laporan sistem ini.
 
 Pengirim pesan: ${senderName}
 
@@ -23,9 +26,10 @@ ${buildSchemaDescription()}
 
 Aturan penting:
 1. Jika informasi tidak disebutkan, isi dengan "-".
-2. Jika pesan ini BUKAN laporan hewan ternak (misal: salam, pertanyaan umum, obrolan biasa), kembalikan JSON dengan field "bukan_laporan_ternak" bernilai true dan field "alasan" berisi penjelasan singkat.
+2. Jika pesan ini BUKAN laporan ternak kambing (misal: salam, pertanyaan umum, obrolan biasa, atau menyebut hewan selain kambing), kembalikan JSON dengan field "bukan_laporan_ternak" bernilai true dan field "alasan" berisi penjelasan singkat.
 3. Jangan mengarang informasi yang tidak ada dalam pesan.
-4. Normalize jenis ternak ke nama umum Indonesia (sapi, kambing, domba, kerbau, babi, ayam, itik, kelinci).
+4. Field "timestamp" dan "pengirim" TIDAK perlu diekstrak, keduanya diisi otomatis oleh sistem.
+5. Pertahankan format tanggal persis seperti yang ditulis peternak.
 `.trim();
 
 const parseMessage = async (messageText, senderName) => {
