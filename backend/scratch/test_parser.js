@@ -8,7 +8,7 @@
  */
 
 require('dotenv').config();
-const { parseMessage } = require('../src/gemini');
+const { parseMessage } = require('../src/services/gemini.service');
 
 // ─── Kasus Uji ───────────────────────────────────────────────────────────────
 

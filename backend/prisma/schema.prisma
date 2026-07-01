@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Kambing {
+  id            String      @id @default(uuid())
+  nomor_telinga String      @unique
+  nama_peternak String
+  alamat        String      @default("-")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  recordings    Recording[]
+
+  @@map("kambing")
+}
+
+model Recording {
+  id                 String   @id @default(uuid())
+  kambingId          String
+  kambing            Kambing  @relation(fields: [kambingId], references: [id], onDelete: Cascade)
+  pengirim           String
+  tanggal_kawin      String   @default("-")
+  tanggal_beranak    String   @default("-")
+  jumlah_anak_jantan String   @default("-")
+  jumlah_anak_betina String   @default("-")
+  perkawinan_ke      String   @default("-")
+  target_penjualan   String   @default("-")
+  terjual            String   @default("-")
+  catatan            String   @default("-")
+  createdAt          DateTime @default(now())
+
+  @@map("recording")
+}
+
+enum Role {
+  ADMIN
+  SUPERADMIN
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String?
+  name      String
+  role      Role     @default(ADMIN)
+  googleId  String?  @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin")
+}
+

@@ -1,4 +1,4 @@
-const config = require('./config');
+const config = require('../config');
 
 const sendTextMessage = async (recipientPhone, text) => {
   const url = `https://graph.facebook.com/v21.0/${config.whatsapp.phoneNumberId}/messages`;

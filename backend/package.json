@@ -1,0 +1,23 @@
+{
+  "name": "recording-ternak-backend",
+  "version": "1.0.0",
+  "description": "Backend recording ternak kambing — WhatsApp + Gemini + Supabase + Google Sheets",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "@prisma/client": "^6.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
+}

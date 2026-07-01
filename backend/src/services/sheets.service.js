@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
 const path = require('path');
-const config = require('./config');
+const config = require('../config');
 
 const getAuthClient = () => {
   if (process.env.GOOGLE_CREDENTIALS) {
@@ -11,7 +11,7 @@ const getAuthClient = () => {
     });
   }
   return new google.auth.GoogleAuth({
-    keyFile: path.resolve(__dirname, '..', config.sheets.credentialsPath),
+    keyFile: path.resolve(process.cwd(), config.sheets.credentialsPath),
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 };

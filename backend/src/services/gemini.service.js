@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const config = require('./config');
+const config = require('../config');
 
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 const model = genAI.getGenerativeModel({ model: config.gemini.model });
@@ -37,6 +37,7 @@ const parseMessage = async (messageText, senderName) => {
   const result = await model.generateContent(prompt);
   const rawText = result.response.text().trim();
 
+  // Bersihkan markdown code block jika ada
   const jsonText = rawText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   return JSON.parse(jsonText);
 };
