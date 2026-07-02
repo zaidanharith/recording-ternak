@@ -85,10 +85,10 @@ Untuk menguji alur pengiriman pesan sebelum melakukan deploy ke Vercel:
    ```bash
    node src/index.js
    ```
-   *Server akan berjalan di port `http://localhost:3000`.*
+   *Server akan berjalan di port `http://localhost:5000`.*
 3. **Aktifkan ngrok (Terowongan Publik):**
    ```bash
-   npx ngrok http 3000
+   npx ngrok http 5000
    ```
    Salin alamat HTTPS yang digenerasi oleh ngrok (misal: `https://abcd-12-34.ngrok-free.app`).
 4. **Hubungkan Webhook di Meta Developer:**
