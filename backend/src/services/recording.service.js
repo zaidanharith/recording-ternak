@@ -38,21 +38,16 @@ const buildSuccessReply = (data) => {
 };
 
 const handleIncomingReport = async (messageText, senderPhone, senderName) => {
-  // 1. Parse menggunakan Gemini
   const parsed = await parseMessage(messageText, senderName);
 
-  // Jika pesan bukan laporan ternak, hentikan proses
   if (parsed.bukan_laporan_ternak) {
     return { success: false, notAReport: true, alasan: parsed.alasan };
   }
 
-  // 2. Hubungkan/buat data Kambing di DB
   const kambing = await findOrCreateKambing(parsed.nomor_telinga, {
     nama_peternak: parsed.nama_peternak,
     alamat: parsed.alamat
   });
-
-  // 3. Catat recording di DB
   const recording = await createRecording({
     kambingId: kambing.id,
     pengirim: senderName,
@@ -66,7 +61,6 @@ const handleIncomingReport = async (messageText, senderPhone, senderName) => {
     catatan: parsed.catatan
   });
 
-  // 4. Append row ke Google Sheets (gunakan nomor telinga final dari DB)
   const timestamp = formatTimestamp();
   const sheetsRow = {
     ...parsed,
@@ -76,7 +70,6 @@ const handleIncomingReport = async (messageText, senderPhone, senderName) => {
   };
   await appendRow(sheetsRow);
 
-  // 5. Kirim balasan WhatsApp
   const replyMessage = buildSuccessReply({
     ...parsed,
     nomor_telinga: kambing.nomor_telinga

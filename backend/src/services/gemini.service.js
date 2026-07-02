@@ -32,14 +32,26 @@ Aturan penting:
 5. Pertahankan format tanggal persis seperti yang ditulis peternak.
 `.trim();
 
+const callWithRetry = async (fn, retries = 3, delay = 1000) => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    console.warn(`⚠️ Gemini API call failed (${error.message}). Retrying in ${delay}ms...`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return callWithRetry(fn, retries - 1, delay * 2);
+  }
+};
+
 const parseMessage = async (messageText, senderName) => {
   const prompt = buildPrompt(messageText, senderName);
-  const result = await model.generateContent(prompt);
+  
+  const result = await callWithRetry(() => model.generateContent(prompt));
   const rawText = result.response.text().trim();
 
-  // Bersihkan markdown code block jika ada
   const jsonText = rawText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   return JSON.parse(jsonText);
 };
 
 module.exports = { parseMessage };
+
