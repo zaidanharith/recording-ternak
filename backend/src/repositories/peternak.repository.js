@@ -43,7 +43,27 @@ const getPeternakByPhone = async (whatsappPhone) => {
   });
 };
 
+/**
+ * Cari peternak berdasarkan nama sebagian (case-insensitive).
+ */
+const searchPeternakByName = async (namaParsial) => {
+  return await prisma.peternak.findMany({
+    where: {
+      nama: { contains: namaParsial, mode: 'insensitive' },
+    },
+    include: {
+      kambing: {
+        include: {
+          recordings: { orderBy: { createdAt: 'desc' } },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+};
+
 module.exports = {
   findOrCreatePeternak,
   getPeternakByPhone,
+  searchPeternakByName,
 };

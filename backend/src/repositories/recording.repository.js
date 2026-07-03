@@ -24,7 +24,41 @@ const getRecordingsByKambingId = async (kambingId) => {
   });
 };
 
+/**
+ * Ambil semua kambing + recording terakhir milik satu peternak.
+ */
+const getFullDataByPeternakId = async (peternakId) => {
+  return await prisma.kambing.findMany({
+    where: { peternakId },
+    include: {
+      recordings: { orderBy: { createdAt: 'desc' } },
+      peternak: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+/**
+ * Ambil semua data (peternak + kambing + recording) untuk keperluan query AI.
+ */
+const getAllDataForQuery = async () => {
+  return await prisma.peternak.findMany({
+    include: {
+      kambing: {
+        include: {
+          recordings: { orderBy: { createdAt: 'desc' } },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+    orderBy: { nama: 'asc' },
+  });
+};
+
 module.exports = {
   createRecording,
-  getRecordingsByKambingId
+  getRecordingsByKambingId,
+  getFullDataByPeternakId,
+  getAllDataForQuery,
 };
+

@@ -1,10 +1,12 @@
-const { parseMessage, generateChatReply } = require('./gemini.service');
+const { parseMessage, generateChatReply, classifyMessageInConfirmation } = require('./gemini.service');
 const { setSession, getSession, clearSession } = require('./session.service');
 const { findOrCreatePeternak } = require('../repositories/peternak.repository');
 const { findOrCreateKambing } = require('../repositories/kambing.repository');
 const { createRecording } = require('../repositories/recording.repository');
 const { appendRecording, upsertKambing, upsertPeternak } = require('./sheets.service');
 const { sendTextMessage } = require('./whatsapp.service');
+const { isDataQuery, handleDataQuery } = require('./query.service');
+const { verifySheetsConsistency } = require('./sync.service');
 
 const formatTimestamp = () =>
   new Date().toLocaleString('id-ID', {
@@ -115,6 +117,11 @@ const saveReport = async (pendingData, peternak) => {
     }),
   ]);
 
+  // Jalankan verifikasi konsistensi secara async (tidak memblokir response ke user)
+  verifySheetsConsistency().catch((err) =>
+    console.error('❌ Consistency check error (non-critical):', err.message)
+  );
+
   return { kambing, recording };
 };
 
@@ -147,19 +154,69 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
       return { state: 'cancelled' };
     }
 
-    // Balasan tidak jelas — ingatkan
-    await sendTextMessage(
-      senderPhone,
-      'Maaf, saya tidak mengerti. Mohon balas dengan *ya* (untuk menyimpan) atau *tidak* (untuk membatalkan).'
-    );
-    return { state: 'waiting_clarification' };
+    // Pesan tidak jelas ya/tidak — cek apakah ini revisi laporan atau pertanyaan biasa
+    try {
+      const classification = await classifyMessageInConfirmation(messageText, senderName, session.data);
+
+      if (classification.isRevisi) {
+        // User mengirim revisi laporan — ganti data pending dengan yang baru
+        const parsed = classification.parsed;
+        const nomorTelingaRaw = (parsed.nomor_telinga || '').trim();
+        const nomorTelinga = nomorTelingaRaw !== '-' ? nomorTelingaRaw.replace(/\D/g, '') : '';
+        const namaPeternak = parsed.nama_peternak && parsed.nama_peternak !== '-'
+          ? parsed.nama_peternak
+          : session.data.namaPeternak;
+
+        if (!nomorTelinga) {
+          // Revisi tanpa nomor telinga — tanya nomor telinga
+          clearSession(senderPhone);
+          setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
+          await sendTextMessage(
+            senderPhone,
+            `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
+          );
+          return { state: 'awaiting_nomor_telinga' };
+        }
+
+        // Revisi lengkap — tampilkan konfirmasi baru
+        const newSessionData = { parsed, nomorTelinga, namaPeternak };
+        clearSession(senderPhone);
+        setSession(senderPhone, 'awaiting_confirmation', newSessionData);
+        const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
+        await sendTextMessage(
+          senderPhone,
+          `🔄 *Laporan diperbarui. Berikut ringkasan terbaru:*\n\n${reply}`
+        );
+        return { state: 'awaiting_confirmation' };
+      }
+
+      // Bukan revisi — jawab pertanyaan/obrolan, pertahankan sesi konfirmasi
+      const chatReply = await generateChatReply(
+        messageText,
+        senderName,
+        'User masih punya laporan yang menunggu konfirmasi. Setelah menjawab, ingatkan user untuk membalas ya/tidak untuk laporannya.'
+      );
+      await sendTextMessage(senderPhone, chatReply);
+      return { state: 'chat_while_pending' };
+    } catch (err) {
+      console.error('❌ Error classifying message in confirmation:', err);
+      // Fallback — ingatkan user
+      await sendTextMessage(
+        senderPhone,
+        'Mohon balas *ya* untuk menyimpan laporan, atau *tidak* untuk membatalkan. 🙏'
+      );
+      return { state: 'waiting_clarification' };
+    }
   }
 
   // ── State: awaiting_nomor_telinga ─────────────────────────────────────────
   if (session?.state === 'awaiting_nomor_telinga') {
-    const nomorTelinga = messageText.trim();
-    if (!nomorTelinga || nomorTelinga.length < 1) {
-      await sendTextMessage(senderPhone, 'Mohon masukkan nomor telinga/ID kambing yang valid ya, Pak/Bu.');
+    const nomorTelinga = messageText.replace(/\D/g, ''); // Ambil hanya angka bulat
+    if (!nomorTelinga) {
+      await sendTextMessage(
+        senderPhone,
+        'Mohon masukkan nomor telinga kambing berupa angka bulat saja ya, Pak/Bu.\n_(Contoh: 12, 105)_'
+      );
       return { state: 'waiting_nomor_telinga' };
     }
 
@@ -186,8 +243,21 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     return { state: 'error' };
   }
 
-  // Bukan laporan ternak — balas dengan chat ramah
+  // Bukan laporan ternak — cek apakah ini pertanyaan tentang data
   if (parsed.bukan_laporan_ternak) {
+    if (isDataQuery(messageText)) {
+      // Ada kata kunci data/ternak → query DB dan jawab
+      try {
+        const dataReply = await handleDataQuery(messageText, senderPhone, senderName);
+        await sendTextMessage(senderPhone, dataReply);
+        return { state: 'data_query_replied' };
+      } catch (err) {
+        console.error('❌ Gagal menangani data query:', err);
+        // Fallback ke chat reply biasa
+      }
+    }
+
+    // Pesan umum/obrolan → balas dengan chat ramah
     let reply;
     try {
       reply = await generateChatReply(messageText, senderName);
@@ -199,15 +269,16 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   }
 
   // Laporan ternak — cek nomor telinga
-  const nomorTelinga = (parsed.nomor_telinga || '').trim();
+  const nomorTelingaRaw = (parsed.nomor_telinga || '').trim();
+  const nomorTelinga = nomorTelingaRaw !== '-' ? nomorTelingaRaw.replace(/\D/g, '') : '';
   const namaPeternak = parsed.nama_peternak && parsed.nama_peternak !== '-' ? parsed.nama_peternak : senderName;
 
-  if (!nomorTelinga || nomorTelinga === '-') {
+  if (!nomorTelinga) {
     // Nomor telinga tidak disebutkan — tanya dulu tanpa AI
     setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
     await sendTextMessage(
       senderPhone,
-      `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Contoh: A001, KMB-05, dst.)_`
+      `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
     );
     return { state: 'awaiting_nomor_telinga' };
   }

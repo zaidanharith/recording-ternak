@@ -57,7 +57,7 @@ const config = {
     // Field yang diekstrak AI dari pesan (untuk prompt Gemini)
     aiParseFields: [
       { key: 'nama_peternak',      description: 'Nama lengkap peternak pemilik kambing yang melaporkan.' },
-      { key: 'nomor_telinga',      description: 'ID atau nomor tag telinga kambing. Isi "-" jika tidak disebutkan.' },
+      { key: 'nomor_telinga',      description: 'Nomor tag telinga kambing. Harus berupa angka bulat/integer saja tanpa huruf (misal: "123", "5"). Isi "-" jika tidak disebutkan.' },
       { key: 'alamat',             description: 'Alamat atau lokasi kandang peternak. Isi "-" jika tidak disebutkan.' },
       { key: 'tanggal_kawin',      description: 'Tanggal perkawinan kambing. Pertahankan format asli peternak. Isi "-" jika tidak disebutkan.' },
       { key: 'tanggal_beranak',    description: 'Tanggal melahirkan/beranak. Pertahankan format asli peternak. Isi "-" jika tidak disebutkan.' },

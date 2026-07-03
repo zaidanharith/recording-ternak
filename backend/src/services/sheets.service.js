@@ -122,4 +122,133 @@ const upsertPeternak = (data) =>
     data
   );
 
-module.exports = { appendRecording, upsertKambing, upsertPeternak };
+/**
+ * Baca jumlah baris data di sebuah sheet (tidak termasuk header).
+ */
+const readSheetRowCount = async (sheetName) => {
+  const sheets = getSheetsClient();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: config.sheets.spreadsheetId,
+    range: `${sheetName}!A:A`,
+  });
+  const rows = response.data.values || [];
+  return Math.max(0, rows.length - 1); // kurangi 1 untuk header
+};
+
+/**
+ * Hapus semua baris data di sebuah sheet (pertahankan header baris pertama).
+ */
+const clearSheetData = async (sheets, sheetName) => {
+  // Ambil jumlah baris dulu
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: config.sheets.spreadsheetId,
+    range: `${sheetName}!A:A`,
+  });
+  const totalRows = (response.data.values || []).length;
+  if (totalRows <= 1) return; // hanya header atau kosong
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: config.sheets.spreadsheetId,
+    range: `${sheetName}!A2:Z${totalRows + 10}`,
+  });
+};
+
+/**
+ * Full sync: tulis ulang semua data dari DB ke Spreadsheet.
+ * Dipanggil saat ada ketidaksesuaian data.
+ * Parameter allData: output dari getAllDataForQuery() (peternak + kambing + recordings).
+ */
+const syncAllFromDB = async (allPeternak) => {
+  const sheets = getSheetsClient();
+  const { spreadsheetId, sheetNames } = config.sheets;
+
+  // Kumpulkan semua baris untuk masing-masing sheet
+  const recordingRows = [];
+  const kambingRows = [];
+  const peternakRows = [];
+
+  for (const p of allPeternak) {
+    const terdaftar = new Date(p.createdAt).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+
+    peternakRows.push(
+      config.dataSchema.peternak.map((col) => {
+        if (col.key === 'createdAt') return terdaftar;
+        return p[col.key] ?? '-';
+      })
+    );
+
+    for (const k of p.kambing) {
+      const kTerdaftar = new Date(k.createdAt).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+      kambingRows.push(
+        config.dataSchema.kambing.map((col) => {
+          if (col.key === 'nomor_telinga') return k.nomor_telinga;
+          if (col.key === 'nama_peternak') return p.nama;
+          if (col.key === 'whatsapp_phone') return p.whatsapp_phone;
+          if (col.key === 'createdAt') return kTerdaftar;
+          return '-';
+        })
+      );
+
+      for (const r of k.recordings) {
+        const rTimestamp = new Date(r.createdAt).toLocaleString('id-ID', {
+          timeZone: 'Asia/Jakarta',
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit',
+        });
+        recordingRows.push(
+          config.dataSchema.recording.map((col) => {
+            if (col.key === 'timestamp') return rTimestamp;
+            if (col.key === 'nomor_telinga') return k.nomor_telinga;
+            if (col.key === 'nama_peternak') return p.nama;
+            return r[col.key] ?? '-';
+          })
+        );
+      }
+    }
+  }
+
+  // Bersihkan data lama (pertahankan header) + tulis data baru
+  await Promise.all([
+    (async () => {
+      await clearSheetData(sheets, sheetNames.recording);
+      if (recordingRows.length > 0) {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${sheetNames.recording}!A2`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          resource: { values: recordingRows },
+        });
+      }
+    })(),
+    (async () => {
+      await clearSheetData(sheets, sheetNames.kambing);
+      if (kambingRows.length > 0) {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${sheetNames.kambing}!A2`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          resource: { values: kambingRows },
+        });
+      }
+    })(),
+    (async () => {
+      await clearSheetData(sheets, sheetNames.peternak);
+      if (peternakRows.length > 0) {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${sheetNames.peternak}!A2`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          resource: { values: peternakRows },
+        });
+      }
+    })(),
+  ]);
+
+  console.log(`✅ Full sync selesai: ${recordingRows.length} recording, ${kambingRows.length} kambing, ${peternakRows.length} peternak`);
+};
+
+module.exports = { appendRecording, upsertKambing, upsertPeternak, readSheetRowCount, syncAllFromDB };
+
