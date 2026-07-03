@@ -8,11 +8,23 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Peternak {
+  id             String    @id @default(uuid())
+  nama           String
+  alamat         String    @default("-")
+  whatsapp_phone String    @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  kambing        Kambing[]
+
+  @@map("peternak")
+}
+
 model Kambing {
   id            String      @id @default(uuid())
   nomor_telinga String      @unique
-  nama_peternak String
-  alamat        String      @default("-")
+  peternakId    String
+  peternak      Peternak    @relation(fields: [peternakId], references: [id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   recordings    Recording[]
@@ -57,4 +69,3 @@ model Admin {
 
   @@map("admin")
 }
-

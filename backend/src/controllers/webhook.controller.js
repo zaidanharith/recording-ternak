@@ -1,5 +1,5 @@
 const config = require('../config');
-const { handleIncomingReport } = require('../services/recording.service');
+const { handleMessage } = require('../services/recording.service');
 
 const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
@@ -17,41 +17,32 @@ const verifyWebhook = (req, res) => {
 };
 
 const handleWebhookEvent = async (req, res) => {
+  // Langsung balas 200 agar WhatsApp tidak timeout
+  res.status(200).send('EVENT_RECEIVED');
+
   try {
     const body = req.body;
 
-    if (body.object === 'whatsapp_business_account') {
-      const entry = body.entry?.[0];
-      const changes = entry?.changes?.[0];
-      const value = changes?.value;
-      const message = value?.messages?.[0];
+    if (body.object !== 'whatsapp_business_account') return;
 
-      if (message && message.type === 'text') {
-        const senderPhone = message.from;
-        const senderName = value.contacts?.[0]?.profile?.name || senderPhone;
-        const messageText = message.text.body;
+    const entry = body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+    const message = value?.messages?.[0];
 
-        console.log(`📩 Incoming message from ${senderName} (${senderPhone}): "${messageText}"`);
+    if (!message || message.type !== 'text') return;
 
-        // Panggil service untuk memproses laporan
-        const result = await handleIncomingReport(messageText, senderPhone, senderName);
+    const senderPhone = message.from;
+    const senderName = value.contacts?.[0]?.profile?.name || senderPhone;
+    const messageText = message.text.body;
 
-        if (result.success) {
-          console.log(`✅ Report processed successfully for Goat: ${result.kambing.nomor_telinga}`);
-        } else if (result.notAReport) {
-          console.log(`ℹ️ Message ignored: Not a livestock report. Alasan: ${result.alasan}`);
-        }
-      }
-      return res.status(200).send('EVENT_RECEIVED');
-    }
-    return res.status(404).end();
+    console.log(`📩 [${senderName}] ${messageText}`);
+
+    const result = await handleMessage(messageText, senderPhone, senderName);
+    console.log(`✅ State: ${result.state}`);
   } catch (error) {
-    console.error('❌ Error handling webhook event:', error);
-    return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    console.error('❌ Error menangani webhook:', error);
   }
 };
 
-module.exports = {
-  verifyWebhook,
-  handleWebhookEvent
-};
+module.exports = { verifyWebhook, handleWebhookEvent };

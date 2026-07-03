@@ -1,48 +1,54 @@
 const prisma = require('../lib/prisma');
 
-const findOrCreateKambing = async (nomorTelinga, data) => {
-  let cleanNomorTelinga = (nomorTelinga || '-').trim();
+/**
+ * Cari kambing berdasarkan nomor telinga.
+ * Jika belum ada, buat kambing baru dengan relasi ke peternak.
+ */
+const findOrCreateKambing = async (nomorTelinga, peternakId) => {
+  const cleanNomor = (nomorTelinga || '').trim();
 
-  // Jika nomor telinga tidak didefinisikan (-), buat ID unik buatan agar tidak melanggar unique constraint di DB
-  if (cleanNomorTelinga === '-') {
-    cleanNomorTelinga = `NON-TAG-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+  if (!cleanNomor || cleanNomor === '-') {
+    throw new Error('Nomor telinga tidak boleh kosong');
   }
 
-  // Coba cari kambing berdasarkan nomor telinga (jika bukan non-tag)
-  if (!cleanNomorTelinga.startsWith('NON-TAG-')) {
-    const existing = await prisma.kambing.findUnique({
-      where: { nomor_telinga: cleanNomorTelinga }
-    });
+  const existing = await prisma.kambing.findUnique({
+    where: { nomor_telinga: cleanNomor },
+    include: { peternak: true },
+  });
 
-    if (existing) {
-      // Update alamat dan nama peternak jika ada perubahan data baru
-      return await prisma.kambing.update({
-        where: { id: existing.id },
-        data: {
-          nama_peternak: data.nama_peternak || existing.nama_peternak,
-          alamat: data.alamat && data.alamat !== '-' ? data.alamat : existing.alamat
-        }
-      });
-    }
-  }
+  if (existing) return existing;
 
-  // Jika tidak ditemukan atau non-tag, buat baru
   return await prisma.kambing.create({
     data: {
-      nomor_telinga: cleanNomorTelinga,
-      nama_peternak: data.nama_peternak || 'Tanpa Nama',
-      alamat: data.alamat || '-'
-    }
+      nomor_telinga: cleanNomor,
+      peternakId,
+    },
+    include: { peternak: true },
   });
 };
 
-const getKambingById = async (id) => {
+/**
+ * Ambil semua kambing milik satu peternak.
+ */
+const getKambingByPeternakId = async (peternakId) => {
+  return await prisma.kambing.findMany({
+    where: { peternakId },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+/**
+ * Cari kambing berdasarkan nomor telinga saja.
+ */
+const getKambingByNomorTelinga = async (nomorTelinga) => {
   return await prisma.kambing.findUnique({
-    where: { id }
+    where: { nomor_telinga: nomorTelinga.trim() },
+    include: { peternak: true },
   });
 };
 
 module.exports = {
   findOrCreateKambing,
-  getKambingById
+  getKambingByPeternakId,
+  getKambingByNomorTelinga,
 };

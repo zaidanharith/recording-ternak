@@ -2,56 +2,71 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../config');
 
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-const model = genAI.getGenerativeModel({ model: config.gemini.model });
 
-const buildSchemaDescription = () =>
-  config.dataSchema.columns
-    .filter((col) => col.key !== 'timestamp' && col.key !== 'pengirim')
-    .map((col) => `- "${col.key}": ${col.description}`)
-    .join('\n');
+// Model utama untuk parsing laporan (butuh reasoning lebih baik)
+const parserModel = genAI.getGenerativeModel({ model: config.gemini.model });
 
-const buildPrompt = (messageText, senderName) => `
-Kamu adalah sistem pencatat data breeding (reproduksi) dan penjualan TERNAK KAMBING milik kelompok peternak kambing.
-Tugasmu adalah mengekstrak informasi dari laporan peternak yang ditulis dalam bahasa Indonesia (termasuk bahasa daerah/campuran) dengan format bebas.
+// Model ringan untuk chat reply non-laporan (hemat token)
+const chatModel = genAI.getGenerativeModel({
+  model: 'gemini-2.0-flash-lite',
+  generationConfig: { maxOutputTokens: 200 },
+});
 
-PENTING: Sistem ini HANYA mencatat laporan tentang ternak KAMBING. Jika pesan menyebut hewan selain kambing (misal: sapi, domba, ayam, dll.), perlakukan sebagai bukan laporan sistem ini.
+// Daftar field yang perlu diekstrak (tanpa timestamp & pengirim — diisi sistem)
+const PARSE_FIELDS = config.dataSchema.columns
+  .filter((col) => col.key !== 'timestamp' && col.key !== 'pengirim')
+  .map((col) => `- "${col.key}": ${col.description}`)
+  .join('\n');
 
-Pengirim pesan: ${senderName}
+/**
+ * Parse pesan peternak untuk mengekstrak data laporan ternak.
+ * Kembalikan JSON dengan field data ternak, atau { bukan_laporan_ternak: true }.
+ */
+const parseMessage = async (messageText, senderName) => {
+  const prompt = `Kamu adalah sistem pencatat data ternak KAMBING.
+Pengirim: ${senderName}
+Pesan: "${messageText}"
 
-Pesan dari peternak:
-"${messageText}"
+Ekstrak data berikut, kembalikan HANYA JSON (tanpa markdown):
+${PARSE_FIELDS}
 
-Ekstrak informasi berikut dan kembalikan HANYA dalam format JSON (tanpa markdown, tanpa penjelasan tambahan):
-${buildSchemaDescription()}
+Aturan:
+1. Field tidak disebutkan → isi "-"
+2. Bukan laporan kambing (salam, pertanyaan, obrolan) → { "bukan_laporan_ternak": true }
+3. Jangan mengarang informasi
+4. "timestamp" dan "pengirim" JANGAN diisi, diurus sistem`;
 
-Aturan penting:
-1. Jika informasi tidak disebutkan, isi dengan "-".
-2. Jika pesan ini BUKAN laporan ternak kambing (misal: salam, pertanyaan umum, obrolan biasa, atau menyebut hewan selain kambing), kembalikan JSON dengan field "bukan_laporan_ternak" bernilai true dan field "alasan" berisi penjelasan singkat.
-3. Jangan mengarang informasi yang tidak ada dalam pesan.
-4. Field "timestamp" dan "pengirim" TIDAK perlu diekstrak, keduanya diisi otomatis oleh sistem.
-5. Pertahankan format tanggal persis seperti yang ditulis peternak.
-`.trim();
+  const result = await callWithRetry(() => parserModel.generateContent(prompt));
+  const rawText = result.response.text().trim();
+  const jsonText = rawText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+  return JSON.parse(jsonText);
+};
+
+/**
+ * Buat balasan ramah untuk pesan non-laporan.
+ * Hemat token: model ringan, output pendek.
+ */
+const generateChatReply = async (messageText, senderName) => {
+  const prompt = `Kamu asisten WhatsApp kelompok peternak kambing di Jawa Timur.
+Balas pesan berikut dengan ramah, singkat, bahasa Indonesia yang mudah dipahami peternak desa.
+Jika ada campuran bahasa Jawa, tetap balas bahasa Indonesia.
+Nama pengirim: ${senderName}
+Pesan: "${messageText}"
+Balas maksimal 3 kalimat pendek.`;
+
+  const result = await callWithRetry(() => chatModel.generateContent(prompt));
+  return result.response.text().trim();
+};
 
 const callWithRetry = async (fn, retries = 3, delay = 1000) => {
   try {
     return await fn();
   } catch (error) {
     if (retries <= 0) throw error;
-    console.warn(`⚠️ Gemini API call failed (${error.message}). Retrying in ${delay}ms...`);
+    console.warn(`⚠️ Gemini API gagal (${error.message}). Mencoba ulang dalam ${delay}ms...`);
     await new Promise((resolve) => setTimeout(resolve, delay));
     return callWithRetry(fn, retries - 1, delay * 2);
   }
 };
 
-const parseMessage = async (messageText, senderName) => {
-  const prompt = buildPrompt(messageText, senderName);
-  
-  const result = await callWithRetry(() => model.generateContent(prompt));
-  const rawText = result.response.text().trim();
-
-  const jsonText = rawText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-  return JSON.parse(jsonText);
-};
-
-module.exports = { parseMessage };
-
+module.exports = { parseMessage, generateChatReply };
