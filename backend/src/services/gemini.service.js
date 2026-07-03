@@ -3,7 +3,6 @@ const config = require('../config');
 
 const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
-// Model utama untuk parsing laporan (butuh reasoning lebih baik)
 const parserModel = genAI.getGenerativeModel({ model: config.gemini.model });
 
 // Model ringan untuk chat reply non-laporan (hemat token)
@@ -12,9 +11,8 @@ const chatModel = genAI.getGenerativeModel({
   generationConfig: { maxOutputTokens: 200 },
 });
 
-// Daftar field yang perlu diekstrak (tanpa timestamp & pengirim — diisi sistem)
-const PARSE_FIELDS = config.dataSchema.columns
-  .filter((col) => col.key !== 'timestamp' && col.key !== 'pengirim')
+// Daftar field yang perlu diekstrak AI dari pesan peternak
+const PARSE_FIELDS = config.dataSchema.aiParseFields
   .map((col) => `- "${col.key}": ${col.description}`)
   .join('\n');
 

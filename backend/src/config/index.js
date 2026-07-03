@@ -8,31 +8,65 @@ const config = {
 
   sheets: {
     spreadsheetId: process.env.SPREADSHEET_ID,
-    sheetName: process.env.SHEET_NAME || 'Recording Kambing',
     credentialsPath: './google-credentials.json',
+    sheetNames: {
+      recording: process.env.SHEET_RECORDING || 'Recording',
+      kambing:   process.env.SHEET_KAMBING   || 'Kambing',
+      peternak:  process.env.SHEET_PETERNAK  || 'Peternak',
+    },
   },
 
   whatsapp: {
-    accessToken: process.env.WA_ACCESS_TOKEN,
+    accessToken:   process.env.WA_ACCESS_TOKEN,
     phoneNumberId: process.env.WA_PHONE_NUMBER_ID,
-    verifyToken: process.env.WA_VERIFY_TOKEN,
+    verifyToken:   process.env.WA_VERIFY_TOKEN,
   },
 
   dataSchema: {
-    columns: [
-      { key: 'timestamp',          label: 'Timestamp',            description: 'Tanggal dan waktu laporan diterima sistem secara otomatis (format: DD/MM/YYYY HH:mm). Jangan ekstrak dari pesan.' },
-      { key: 'pengirim',           label: 'Pengirim',             description: 'Nama atau nomor WhatsApp pengirim laporan, diisi otomatis oleh sistem. Jangan ekstrak dari pesan.' },
-      { key: 'nama_peternak',      label: 'Nama Peternak',        description: 'Nama lengkap peternak pemilik kambing yang melaporkan.' },
-      { key: 'nomor_telinga',      label: 'Nomor Telinga/Ternak', description: 'ID atau nomor tag telinga kambing yang dilaporkan. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'alamat',             label: 'Alamat',               description: 'Alamat lengkap atau lokasi kandang peternak. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'tanggal_kawin',      label: 'Tanggal Kawin',        description: 'Tanggal perkawinan kambing betina. Pertahankan format tanggal seperti yang ditulis peternak (misal: 12 Januari 2025, 12/01/2025). Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'tanggal_beranak',    label: 'Tanggal Beranak',      description: 'Tanggal melahirkan/beranak kambing. Pertahankan format tanggal seperti yang ditulis peternak. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'jumlah_anak_jantan', label: 'Jumlah Anak Jantan',   description: 'Jumlah anak kambing yang lahir berjenis kelamin jantan. Isi angka 0 jika disebutkan tidak ada, atau "-" jika tidak disebutkan sama sekali.' },
-      { key: 'jumlah_anak_betina', label: 'Jumlah Anak Betina',   description: 'Jumlah anak kambing yang lahir berjenis kelamin betina. Isi angka 0 jika disebutkan tidak ada, atau "-" jika tidak disebutkan sama sekali.' },
-      { key: 'perkawinan_ke',      label: 'Perkawinan Ke',        description: 'Urutan perkawinan (parity), misal: 1, 2, 3 dst. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'target_penjualan',   label: 'Target Penjualan',     description: 'Target tanggal atau harga penjualan kambing sebagaimana ditulis peternak. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'terjual',            label: 'Terjual',              description: 'Status penjualan kambing: "Ya", "Belum", harga terjual, atau keterangan penjualan sebagaimana ditulis. Isi dengan "-" jika tidak disebutkan.' },
-      { key: 'catatan',            label: 'Catatan',              description: 'Informasi tambahan atau catatan lain yang tidak termasuk field di atas. Isi dengan "-" jika tidak ada.' },
+    // Kolom sheet Recording
+    recording: [
+      { key: 'timestamp',          label: 'Timestamp'           },
+      { key: 'nomor_telinga',      label: 'No. Telinga'         },
+      { key: 'nama_peternak',      label: 'Nama Peternak'       },
+      { key: 'tanggal_kawin',      label: 'Tanggal Kawin'       },
+      { key: 'tanggal_beranak',    label: 'Tanggal Beranak'     },
+      { key: 'jumlah_anak_jantan', label: 'Jumlah Anak Jantan'  },
+      { key: 'jumlah_anak_betina', label: 'Jumlah Anak Betina'  },
+      { key: 'perkawinan_ke',      label: 'Perkawinan Ke'       },
+      { key: 'target_penjualan',   label: 'Target Penjualan'    },
+      { key: 'terjual',            label: 'Terjual'             },
+      { key: 'catatan',            label: 'Catatan'             },
+    ],
+
+    // Kolom sheet Kambing
+    kambing: [
+      { key: 'nomor_telinga',  label: 'No. Telinga'   },
+      { key: 'nama_peternak',  label: 'Nama Peternak' },
+      { key: 'whatsapp_phone', label: 'No. WhatsApp'  },
+      { key: 'createdAt',      label: 'Terdaftar'     },
+    ],
+
+    // Kolom sheet Peternak
+    peternak: [
+      { key: 'nama',           label: 'Nama Peternak' },
+      { key: 'alamat',         label: 'Alamat'        },
+      { key: 'whatsapp_phone', label: 'No. WhatsApp'  },
+      { key: 'createdAt',      label: 'Terdaftar'     },
+    ],
+
+    // Field yang diekstrak AI dari pesan (untuk prompt Gemini)
+    aiParseFields: [
+      { key: 'nama_peternak',      description: 'Nama lengkap peternak pemilik kambing yang melaporkan.' },
+      { key: 'nomor_telinga',      description: 'ID atau nomor tag telinga kambing. Isi "-" jika tidak disebutkan.' },
+      { key: 'alamat',             description: 'Alamat atau lokasi kandang peternak. Isi "-" jika tidak disebutkan.' },
+      { key: 'tanggal_kawin',      description: 'Tanggal perkawinan kambing. Pertahankan format asli peternak. Isi "-" jika tidak disebutkan.' },
+      { key: 'tanggal_beranak',    description: 'Tanggal melahirkan/beranak. Pertahankan format asli peternak. Isi "-" jika tidak disebutkan.' },
+      { key: 'jumlah_anak_jantan', description: 'Jumlah anak jantan. Isi 0 jika tidak ada, "-" jika tidak disebutkan.' },
+      { key: 'jumlah_anak_betina', description: 'Jumlah anak betina. Isi 0 jika tidak ada, "-" jika tidak disebutkan.' },
+      { key: 'perkawinan_ke',      description: 'Urutan perkawinan (1, 2, 3...). Isi "-" jika tidak disebutkan.' },
+      { key: 'target_penjualan',   description: 'Target tanggal/harga jual. Isi "-" jika tidak disebutkan.' },
+      { key: 'terjual',            description: 'Status terjual: "Ya", "Belum", atau keterangan lain. Isi "-" jika tidak disebutkan.' },
+      { key: 'catatan',            description: 'Informasi tambahan. Isi "-" jika tidak ada.' },
     ],
   },
 };

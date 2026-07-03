@@ -3,7 +3,7 @@ const { setSession, getSession, clearSession } = require('./session.service');
 const { findOrCreatePeternak } = require('../repositories/peternak.repository');
 const { findOrCreateKambing } = require('../repositories/kambing.repository');
 const { createRecording } = require('../repositories/recording.repository');
-const { appendRow } = require('./sheets.service');
+const { appendRecording, upsertKambing, upsertPeternak } = require('./sheets.service');
 const { sendTextMessage } = require('./whatsapp.service');
 
 const formatTimestamp = () =>
@@ -65,6 +65,7 @@ const buildSuksesMessage = (parsed, nomorTelinga, namaPeternak) => {
 const saveReport = async (pendingData, peternak) => {
   const { parsed, nomorTelinga } = pendingData;
 
+  // Simpan ke database
   const kambing = await findOrCreateKambing(nomorTelinga, peternak.id);
   const recording = await createRecording({
     kambingId: kambing.id,
@@ -80,14 +81,39 @@ const saveReport = async (pendingData, peternak) => {
   });
 
   const timestamp = formatTimestamp();
-  await appendRow({
-    ...parsed,
-    nomor_telinga: nomorTelinga,
-    nama_peternak: peternak.nama,
-    alamat: peternak.alamat,
-    timestamp,
-    pengirim: peternak.nama,
-  });
+  const terdaftar = new Date().toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+
+  // Simpan ke 3 sheet Google Spreadsheet secara paralel
+  await Promise.all([
+    // Sheet Recording: satu baris per laporan
+    appendRecording({
+      timestamp,
+      nomor_telinga: nomorTelinga,
+      nama_peternak: peternak.nama,
+      tanggal_kawin: parsed.tanggal_kawin,
+      tanggal_beranak: parsed.tanggal_beranak,
+      jumlah_anak_jantan: parsed.jumlah_anak_jantan,
+      jumlah_anak_betina: parsed.jumlah_anak_betina,
+      perkawinan_ke: parsed.perkawinan_ke,
+      target_penjualan: parsed.target_penjualan,
+      terjual: parsed.terjual,
+      catatan: parsed.catatan,
+    }),
+    // Sheet Kambing: upsert agar tidak duplikat
+    upsertKambing({
+      nomor_telinga: nomorTelinga,
+      nama_peternak: peternak.nama,
+      whatsapp_phone: peternak.whatsapp_phone,
+      createdAt: terdaftar,
+    }),
+    // Sheet Peternak: upsert agar tidak duplikat
+    upsertPeternak({
+      nama: peternak.nama,
+      alamat: peternak.alamat,
+      whatsapp_phone: peternak.whatsapp_phone,
+      createdAt: terdaftar,
+    }),
+  ]);
 
   return { kambing, recording };
 };
