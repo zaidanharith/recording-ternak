@@ -17,20 +17,22 @@ const verifyWebhook = (req, res) => {
 };
 
 const handleWebhookEvent = async (req, res) => {
-  // Langsung balas 200 agar WhatsApp tidak timeout
-  res.status(200).send('EVENT_RECEIVED');
 
   try {
     const body = req.body;
 
-    if (body.object !== 'whatsapp_business_account') return;
+    if (body.object !== 'whatsapp_business_account') {
+      return res.status(404).send('NOT_FOUND');
+    }
 
     const entry = body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
     const message = value?.messages?.[0];
 
-    if (!message || message.type !== 'text') return;
+    if (!message || message.type !== 'text') {
+      return res.status(200).send('EVENT_RECEIVED');
+    }
 
     const senderPhone = message.from;
     const senderName = value.contacts?.[0]?.profile?.name || senderPhone;
@@ -40,8 +42,10 @@ const handleWebhookEvent = async (req, res) => {
 
     const result = await handleMessage(messageText, senderPhone, senderName);
     console.log(`✅ State: ${result.state}`);
+    res.status(200).send('EVENT_RECEIVED');
   } catch (error) {
     console.error('❌ Error menangani webhook:', error);
+    res.status(500).send('ERROR');
   }
 };
 
