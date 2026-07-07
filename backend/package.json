@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node src/server.js",
+    "test": "jest",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -14,11 +15,16 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
     "@prisma/client": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "googleapis": "^144.0.0"
+    "google-auth-library": "^10.9.0",
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
-    "prisma": "^6.19.3"
+    "jest": "^30.4.2",
+    "prisma": "^6.19.3",
+    "supertest": "^7.2.2"
   }
 }
