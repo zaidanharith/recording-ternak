@@ -128,7 +128,7 @@ const saveReport = async (pendingData, peternak) => {
 // ─── Entry point utama ────────────────────────────────────────────────────────
 
 const handleMessage = async (messageText, senderPhone, senderName) => {
-  const session = getSession(senderPhone);
+  const session = await getSession(senderPhone);
 
   // ── State: awaiting_confirmation ─────────────────────────────────────────
   if (session?.state === 'awaiting_confirmation') {
@@ -137,7 +137,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
         nama: session.data.namaPeternak,
         alamat: session.data.parsed.alamat,
       });
-      clearSession(senderPhone);
+      await clearSession(senderPhone);
 
       const { kambing } = await saveReport(session.data, peternak);
       const reply = buildSuksesMessage(session.data.parsed, session.data.nomorTelinga, peternak.nama);
@@ -146,7 +146,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     }
 
     if (isKonfirmasiTidak(messageText)) {
-      clearSession(senderPhone);
+      await clearSession(senderPhone);
       await sendTextMessage(
         senderPhone,
         '❌ Laporan dibatalkan.\n\nSilakan kirim ulang laporan yang benar ya, Pak/Bu. 🙏'
@@ -169,8 +169,8 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
         if (!nomorTelinga) {
           // Revisi tanpa nomor telinga — tanya nomor telinga
-          clearSession(senderPhone);
-          setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
+          await clearSession(senderPhone);
+          await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
           await sendTextMessage(
             senderPhone,
             `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
@@ -180,8 +180,8 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
         // Revisi lengkap — tampilkan konfirmasi baru
         const newSessionData = { parsed, nomorTelinga, namaPeternak };
-        clearSession(senderPhone);
-        setSession(senderPhone, 'awaiting_confirmation', newSessionData);
+        await clearSession(senderPhone);
+        await setSession(senderPhone, 'awaiting_confirmation', newSessionData);
         const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
         await sendTextMessage(
           senderPhone,
@@ -222,8 +222,8 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
     // Update sesi dengan nomor telinga dan lanjut ke konfirmasi
     const updatedData = { ...session.data, nomorTelinga };
-    clearSession(senderPhone);
-    setSession(senderPhone, 'awaiting_confirmation', updatedData);
+    await clearSession(senderPhone);
+    await setSession(senderPhone, 'awaiting_confirmation', updatedData);
 
     const reply = buildKonfirmasiMessage(session.data.parsed, nomorTelinga, session.data.namaPeternak);
     await sendTextMessage(senderPhone, reply);
@@ -275,7 +275,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
   if (!nomorTelinga) {
     // Nomor telinga tidak disebutkan — tanya dulu tanpa AI
-    setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
+    await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
     await sendTextMessage(
       senderPhone,
       `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
@@ -284,7 +284,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   }
 
   // Semua data cukup — kirim ringkasan konfirmasi
-  setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak });
+  await setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak });
   const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
   await sendTextMessage(senderPhone, reply);
   return { state: 'awaiting_confirmation' };

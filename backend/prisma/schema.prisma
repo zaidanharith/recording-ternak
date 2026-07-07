@@ -50,6 +50,16 @@ model Recording {
   @@map("recording")
 }
 
+model Session {
+  phone     String   @id
+  state     String
+  data      Json
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
 enum Role {
   ADMIN
   SUPERADMIN

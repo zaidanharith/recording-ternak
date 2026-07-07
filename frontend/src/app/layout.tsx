@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Geist } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 import "../styles/globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Recording Ternak",
@@ -16,7 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("antialiased", "font-sans", geist.variable)}>
+    <html
+      lang="en"
+      className={cn("antialiased", "font-sans", notoSans.variable)}
+    >
       <body>{children}</body>
     </html>
   );

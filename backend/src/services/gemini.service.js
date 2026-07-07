@@ -113,14 +113,23 @@ Balas maksimal 3 kalimat pendek.`;
   return result.response.text().trim();
 };
 
+const isRateLimitError = (error) =>
+  error?.status === 429 || /429|rate limit|resource_exhausted|quota/i.test(error?.message || '');
+
 const callWithRetry = async (fn, retries = 3, delay = 1000) => {
   try {
     return await fn();
   } catch (error) {
     if (retries <= 0) throw error;
-    console.warn(`⚠️ Gemini API gagal (${error.message}). Mencoba ulang dalam ${delay}ms...`);
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    return callWithRetry(fn, retries - 1, delay * 2);
+
+    const rateLimited = isRateLimitError(error);
+    const nextDelay = rateLimited ? Math.max(delay, 5000) : delay;
+
+    console.warn(
+      `⚠️ Gemini API gagal (${rateLimited ? 'rate limit RPM, bukan kuota token' : error.message}). Mencoba ulang dalam ${nextDelay}ms...`
+    );
+    await new Promise((resolve) => setTimeout(resolve, nextDelay));
+    return callWithRetry(fn, retries - 1, nextDelay * 3);
   }
 };
 
