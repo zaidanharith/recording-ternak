@@ -62,8 +62,69 @@ const searchFarmerByName = async (namaParsial) => {
   });
 };
 
+const listFarmers = async ({ search, page, limit }) => {
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { whatsappPhone: { contains: search } },
+        ],
+      }
+    : {};
+
+  const [farmers, total] = await Promise.all([
+    prisma.farmer.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.farmer.count({ where }),
+  ]);
+
+  return { farmers, total };
+};
+
+const findFarmerById = async (id) => {
+  return await prisma.farmer.findUnique({
+    where: { id },
+    include: { goats: true },
+  });
+};
+
+const createFarmer = async ({ name, address, whatsappPhone }) => {
+  return await prisma.farmer.create({
+    data: { name, address: address || '-', whatsappPhone },
+  });
+};
+
+const updateFarmer = async (id, data) => {
+  return await prisma.farmer.update({ where: { id }, data });
+};
+
+const deleteFarmer = async (id) => {
+  return await prisma.farmer.delete({ where: { id } });
+};
+
+const listFarmersNotReported = async (days) => {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  return await prisma.farmer.findMany({
+    where: {
+      goats: { none: { recordings: { some: { createdAt: { gte: cutoff } } } } },
+    },
+    include: { goats: true },
+    orderBy: { name: 'asc' },
+  });
+};
+
 module.exports = {
   findOrCreateFarmer,
   getFarmerByPhone,
   searchFarmerByName,
+  listFarmers,
+  findFarmerById,
+  createFarmer,
+  updateFarmer,
+  deleteFarmer,
+  listFarmersNotReported,
 };
