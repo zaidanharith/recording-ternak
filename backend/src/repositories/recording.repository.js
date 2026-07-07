@@ -55,10 +55,74 @@ const getAllDataForQuery = async () => {
   });
 };
 
+const createManualRecording = async ({
+  goatId, senderName, matingDate, birthDate, maleKidCount, femaleKidCount,
+  matingNumber, saleTarget, sold, notes, photoUrl,
+}) => {
+  return await prisma.recording.create({
+    data: {
+      goatId,
+      senderName,
+      matingDate: matingDate || '-',
+      birthDate: birthDate || '-',
+      maleKidCount: maleKidCount !== undefined ? String(maleKidCount) : '-',
+      femaleKidCount: femaleKidCount !== undefined ? String(femaleKidCount) : '-',
+      matingNumber: matingNumber !== undefined ? String(matingNumber) : '-',
+      saleTarget: saleTarget || '-',
+      sold: sold || '-',
+      notes: notes || '-',
+      photoUrl: photoUrl || null,
+      status: 'FINAL',
+      source: 'MANUAL',
+    },
+  });
+};
+
+const listRecordings = async ({ status, goatId, farmerId, page, limit }) => {
+  const where = {
+    ...(status && { status }),
+    ...(goatId && { goatId }),
+    ...(farmerId && { goat: { farmerId } }),
+  };
+
+  const [recordings, total] = await Promise.all([
+    prisma.recording.findMany({
+      where,
+      include: { goat: { include: { farmer: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.recording.count({ where }),
+  ]);
+
+  return { recordings, total };
+};
+
+const findRecordingById = async (id) => {
+  return await prisma.recording.findUnique({
+    where: { id },
+    include: { goat: { include: { farmer: true } } },
+  });
+};
+
+const updateRecording = async (id, data) => {
+  return await prisma.recording.update({ where: { id }, data });
+};
+
+const deleteRecording = async (id) => {
+  return await prisma.recording.delete({ where: { id } });
+};
+
 module.exports = {
   createRecording,
   getRecordingsByGoatId,
   getFullDataByFarmerId,
   getAllDataForQuery,
+  createManualRecording,
+  listRecordings,
+  findRecordingById,
+  updateRecording,
+  deleteRecording,
 };
 
