@@ -7,7 +7,7 @@ const parserModel = genAI.getGenerativeModel({ model: config.gemini.model });
 
 // Model ringan untuk chat reply non-laporan (hemat token)
 const chatModel = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash-lite',
+  model: config.gemini.chatModel,
   generationConfig: { maxOutputTokens: 250 },
 });
 
