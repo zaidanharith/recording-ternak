@@ -1,7 +1,7 @@
 const { parseMessage, generateChatReply, classifyMessageInConfirmation } = require('./gemini.service');
 const { setSession, getSession, clearSession } = require('./session.service');
-const { findOrCreatePeternak } = require('../repositories/peternak.repository');
-const { findOrCreateKambing } = require('../repositories/kambing.repository');
+const { findOrCreateFarmer } = require('../repositories/farmer.repository');
+const { findOrCreateGoat } = require('../repositories/goat.repository');
 const { createRecording } = require('../repositories/recording.repository');
 const { appendRecording, upsertKambing, upsertPeternak } = require('./sheets.service');
 const { sendTextMessage } = require('./whatsapp.service');
@@ -102,10 +102,10 @@ const saveReport = async (pendingData, peternak) => {
   const { parsed, nomorTelinga } = pendingData;
 
   // Simpan ke database
-  const kambing = await findOrCreateKambing(nomorTelinga, peternak.id);
+  const kambing = await findOrCreateGoat(nomorTelinga, peternak.id);
   const recording = await createRecording({
     kambingId: kambing.id,
-    pengirim: peternak.nama,
+    pengirim: peternak.name,
     tanggal_kawin: parsed.tanggal_kawin,
     tanggal_beranak: parsed.tanggal_beranak,
     jumlah_anak_jantan: parsed.jumlah_anak_jantan,
@@ -125,7 +125,7 @@ const saveReport = async (pendingData, peternak) => {
     appendRecording({
       timestamp,
       nomor_telinga: nomorTelinga,
-      nama_peternak: peternak.nama,
+      nama_peternak: peternak.name,
       tanggal_kawin: parsed.tanggal_kawin,
       tanggal_beranak: parsed.tanggal_beranak,
       jumlah_anak_jantan: parsed.jumlah_anak_jantan,
@@ -138,15 +138,15 @@ const saveReport = async (pendingData, peternak) => {
     // Sheet Kambing: upsert agar tidak duplikat
     upsertKambing({
       nomor_telinga: nomorTelinga,
-      nama_peternak: peternak.nama,
-      whatsapp_phone: peternak.whatsapp_phone,
+      nama_peternak: peternak.name,
+      whatsapp_phone: peternak.whatsappPhone,
       createdAt: terdaftar,
     }),
     // Sheet Peternak: upsert agar tidak duplikat
     upsertPeternak({
-      nama: peternak.nama,
-      alamat: peternak.alamat,
-      whatsapp_phone: peternak.whatsapp_phone,
+      nama: peternak.name,
+      alamat: peternak.address,
+      whatsapp_phone: peternak.whatsappPhone,
       createdAt: terdaftar,
     }),
   ]);
@@ -183,17 +183,17 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   // ── State: awaiting_confirmation ─────────────────────────────────────────
   if (session?.state === 'awaiting_confirmation') {
     if (isKonfirmasiYa(messageText)) {
-      const peternak = await findOrCreatePeternak(senderPhone, {
+      const peternak = await findOrCreateFarmer(senderPhone, {
         nama: session.data.namaPeternak,
         alamat: session.data.parsed.alamat,
       });
       await clearSession(senderPhone);
 
       const { kambing } = await saveReport(session.data, peternak);
-      const reply = buildSuksesMessage(session.data.parsed, session.data.nomorTelinga, peternak.nama);
+      const reply = buildSuksesMessage(session.data.parsed, session.data.nomorTelinga, peternak.name);
       await sendTextMessage(senderPhone, reply);
       logReply(reply);
-      return { state: 'saved', nomorTelinga: kambing.nomor_telinga };
+      return { state: 'saved', nomorTelinga: kambing.earTagNumber };
     }
 
     if (isKonfirmasiTidak(messageText)) {

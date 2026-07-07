@@ -14,8 +14,8 @@ const verifySheetsConsistency = async () => {
   try {
     const [dbRecording, dbKambing, dbPeternak] = await Promise.all([
       prisma.recording.count(),
-      prisma.kambing.count(),
-      prisma.peternak.count(),
+      prisma.goat.count(),
+      prisma.farmer.count(),
     ]);
 
     const [sheetsRecording, sheetsKambing, sheetsPeternak] = await Promise.all([

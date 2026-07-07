@@ -1,5 +1,5 @@
 const { generateDataAnswer } = require('./gemini.service');
-const { getPeternakByPhone, searchPeternakByName } = require('../repositories/peternak.repository');
+const { getFarmerByPhone, searchFarmerByName } = require('../repositories/farmer.repository');
 const { getAllDataForQuery } = require('../repositories/recording.repository');
 
 // ─── Rule-based detection — tidak butuh AI ───────────────────────────────────
@@ -12,23 +12,23 @@ const isDataQuery = (text) => DATA_QUERY_PATTERN.test(text);
 
 const summarizeData = (allPeternak) => {
   return allPeternak.map((p) => ({
-    peternak: p.nama,
-    wa: p.whatsapp_phone,
-    alamat: p.alamat,
-    kambing: p.kambing.map((k) => {
+    peternak: p.name,
+    wa: p.whatsappPhone,
+    alamat: p.address,
+    kambing: p.goats.map((k) => {
       const latest = k.recordings[0] || null;
       return {
-        no_telinga: k.nomor_telinga,
+        no_telinga: k.earTagNumber,
         total_recording: k.recordings.length,
         terakhir: latest
           ? {
-              tgl_kawin: latest.tanggal_kawin,
-              tgl_beranak: latest.tanggal_beranak,
-              anak_jantan: latest.jumlah_anak_jantan,
-              anak_betina: latest.jumlah_anak_betina,
-              perkawinan_ke: latest.perkawinan_ke,
-              terjual: latest.terjual,
-              catatan: latest.catatan,
+              tgl_kawin: latest.matingDate,
+              tgl_beranak: latest.birthDate,
+              anak_jantan: latest.maleKidCount,
+              anak_betina: latest.femaleKidCount,
+              perkawinan_ke: latest.matingNumber,
+              terjual: latest.sold,
+              catatan: latest.notes,
             }
           : null,
       };
@@ -53,7 +53,7 @@ const handleDataQuery = async (messageText, senderPhone, senderName, historyCont
 
   if (mentionedName) {
     // Ada nama spesifik yang disebut → cari data peternak tersebut
-    const results = await searchPeternakByName(mentionedName);
+    const results = await searchFarmerByName(mentionedName);
     if (results.length > 0) {
       queryData = summarizeData(results);
     } else {
@@ -63,7 +63,7 @@ const handleDataQuery = async (messageText, senderPhone, senderName, historyCont
     }
   } else {
     // Tidak ada nama spesifik → ambil data peternak pengirim + semua data
-    const senderData = await getPeternakByPhone(senderPhone);
+    const senderData = await getFarmerByPhone(senderPhone);
     if (senderData) {
       // Prioritaskan data milik pengirim, tambahkan ringkasan semua peternak
       const allData = await getAllDataForQuery();

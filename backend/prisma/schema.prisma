@@ -8,44 +8,44 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Peternak {
-  id             String    @id @default(uuid())
-  nama           String
-  alamat         String    @default("-")
-  whatsapp_phone String    @unique
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  kambing        Kambing[]
+model Farmer {
+  id            String   @id @default(uuid())
+  name          String
+  address       String   @default("-")
+  whatsappPhone String   @unique @map("whatsapp_phone")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  goats         Goat[]
 
-  @@map("peternak")
+  @@map("farmer")
 }
 
-model Kambing {
-  id            String      @id @default(uuid())
-  nomor_telinga String      @unique
-  peternakId    String
-  peternak      Peternak    @relation(fields: [peternakId], references: [id], onDelete: Cascade)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  recordings    Recording[]
+model Goat {
+  id           String      @id @default(uuid())
+  earTagNumber String      @unique @map("ear_tag_number")
+  farmerId     String      @map("farmer_id")
+  farmer       Farmer      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  recordings   Recording[]
 
-  @@map("kambing")
+  @@map("goat")
 }
 
 model Recording {
-  id                 String   @id @default(uuid())
-  kambingId          String
-  kambing            Kambing  @relation(fields: [kambingId], references: [id], onDelete: Cascade)
-  pengirim           String
-  tanggal_kawin      String   @default("-")
-  tanggal_beranak    String   @default("-")
-  jumlah_anak_jantan String   @default("-")
-  jumlah_anak_betina String   @default("-")
-  perkawinan_ke      String   @default("-")
-  target_penjualan   String   @default("-")
-  terjual            String   @default("-")
-  catatan            String   @default("-")
-  createdAt          DateTime @default(now())
+  id             String   @id @default(uuid())
+  goatId         String   @map("goat_id")
+  goat           Goat     @relation(fields: [goatId], references: [id], onDelete: Cascade)
+  senderName     String   @map("sender_name")
+  matingDate     String   @default("-") @map("mating_date")
+  birthDate      String   @default("-") @map("birth_date")
+  maleKidCount   String   @default("-") @map("male_kid_count")
+  femaleKidCount String   @default("-") @map("female_kid_count")
+  matingNumber   String   @default("-") @map("mating_number")
+  saleTarget     String   @default("-") @map("sale_target")
+  sold           String   @default("-")
+  notes          String   @default("-")
+  createdAt      DateTime @default(now())
 
   @@map("recording")
 }

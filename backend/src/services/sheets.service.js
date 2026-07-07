@@ -167,23 +167,40 @@ const syncAllFromDB = async (allPeternak) => {
   const kambingRows = [];
   const peternakRows = [];
 
+  const peternakFieldMap = {
+    nama: (p) => p.name,
+    alamat: (p) => p.address,
+    whatsapp_phone: (p) => p.whatsappPhone,
+  };
+
+  const recordingFieldMap = {
+    tanggal_kawin: (r) => r.matingDate,
+    tanggal_beranak: (r) => r.birthDate,
+    jumlah_anak_jantan: (r) => r.maleKidCount,
+    jumlah_anak_betina: (r) => r.femaleKidCount,
+    perkawinan_ke: (r) => r.matingNumber,
+    target_penjualan: (r) => r.saleTarget,
+    terjual: (r) => r.sold,
+    catatan: (r) => r.notes,
+  };
+
   for (const p of allPeternak) {
     const terdaftar = new Date(p.createdAt).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
 
     peternakRows.push(
       config.dataSchema.peternak.map((col) => {
         if (col.key === 'createdAt') return terdaftar;
-        return p[col.key] ?? '-';
+        return peternakFieldMap[col.key]?.(p) ?? '-';
       })
     );
 
-    for (const k of p.kambing) {
+    for (const k of p.goats) {
       const kTerdaftar = new Date(k.createdAt).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
       kambingRows.push(
         config.dataSchema.kambing.map((col) => {
-          if (col.key === 'nomor_telinga') return k.nomor_telinga;
-          if (col.key === 'nama_peternak') return p.nama;
-          if (col.key === 'whatsapp_phone') return p.whatsapp_phone;
+          if (col.key === 'nomor_telinga') return k.earTagNumber;
+          if (col.key === 'nama_peternak') return p.name;
+          if (col.key === 'whatsapp_phone') return p.whatsappPhone;
           if (col.key === 'createdAt') return kTerdaftar;
           return '-';
         })
@@ -198,9 +215,9 @@ const syncAllFromDB = async (allPeternak) => {
         recordingRows.push(
           config.dataSchema.recording.map((col) => {
             if (col.key === 'timestamp') return rTimestamp;
-            if (col.key === 'nomor_telinga') return k.nomor_telinga;
-            if (col.key === 'nama_peternak') return p.nama;
-            return r[col.key] ?? '-';
+            if (col.key === 'nomor_telinga') return k.earTagNumber;
+            if (col.key === 'nama_peternak') return p.name;
+            return recordingFieldMap[col.key]?.(r) ?? '-';
           })
         );
       }
