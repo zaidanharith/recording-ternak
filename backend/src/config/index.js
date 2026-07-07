@@ -23,6 +23,12 @@ const config = {
     verifyToken:   process.env.WA_VERIFY_TOKEN,
   },
 
+  auth: {
+    jwtSecret: process.env.JWT_SECRET || 'fallback_secret_for_development',
+    jwtExpiresIn: '7d',
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
+  },
+
   dataSchema: {
     // Kolom sheet Recording
     recording: [
