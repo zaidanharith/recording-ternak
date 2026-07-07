@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const { readSheetRowCount, syncAllFromDB } = require('./sheets.service');
 const { getAllDataForQuery } = require('../repositories/recording.repository');
+const { recordSyncSuccess, recordSyncFailure } = require('../repositories/sync-status.repository');
 const config = require('../config');
 
 /**
@@ -55,8 +56,10 @@ const runFullSync = async () => {
     console.log('🔄 Memulai full sync DB → Sheets...');
     const allData = await getAllDataForQuery();
     await syncAllFromDB(allData);
+    await recordSyncSuccess();
   } catch (err) {
     console.error('❌ Full sync gagal:', err.message);
+    await recordSyncFailure(err.message);
     throw err;
   }
 };
