@@ -74,6 +74,7 @@ model ChatMessage {
 enum Role {
   ADMIN
   SUPERADMIN
+  VIEWER
 }
 
 model Admin {
