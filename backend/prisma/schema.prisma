@@ -32,20 +32,33 @@ model Goat {
   @@map("goat")
 }
 
+enum RecordingStatus {
+  PERLU_REVIEW
+  FINAL
+}
+
+enum RecordingSource {
+  WA
+  MANUAL
+}
+
 model Recording {
-  id             String   @id @default(uuid())
-  goatId         String   @map("goat_id")
-  goat           Goat     @relation(fields: [goatId], references: [id], onDelete: Cascade)
-  senderName     String   @map("sender_name")
-  matingDate     String   @default("-") @map("mating_date")
-  birthDate      String   @default("-") @map("birth_date")
-  maleKidCount   String   @default("-") @map("male_kid_count")
-  femaleKidCount String   @default("-") @map("female_kid_count")
-  matingNumber   String   @default("-") @map("mating_number")
-  saleTarget     String   @default("-") @map("sale_target")
-  sold           String   @default("-")
-  notes          String   @default("-")
-  createdAt      DateTime @default(now())
+  id             String          @id @default(uuid())
+  goatId         String          @map("goat_id")
+  goat           Goat            @relation(fields: [goatId], references: [id], onDelete: Cascade)
+  senderName     String          @map("sender_name")
+  matingDate     String          @default("-") @map("mating_date")
+  birthDate      String          @default("-") @map("birth_date")
+  maleKidCount   String          @default("-") @map("male_kid_count")
+  femaleKidCount String          @default("-") @map("female_kid_count")
+  matingNumber   String          @default("-") @map("mating_number")
+  saleTarget     String          @default("-") @map("sale_target")
+  sold           String          @default("-")
+  notes          String          @default("-")
+  status         RecordingStatus @default(PERLU_REVIEW)
+  source         RecordingSource @default(WA)
+  photoUrl       String?         @map("photo_url")
+  createdAt      DateTime        @default(now())
 
   @@map("recording")
 }
@@ -90,4 +103,14 @@ model Admin {
   updatedAt DateTime @updatedAt
 
   @@map("admin")
+}
+
+model SyncStatus {
+  id         String    @id @default("singleton")
+  lastSyncAt DateTime?
+  lastStatus String    @default("BELUM_PERNAH")
+  lastError  String?
+  updatedAt  DateTime  @updatedAt
+
+  @@map("sync_status")
 }
