@@ -46,7 +46,7 @@ const extractMentionedName = (text) => {
 
 // ─── Entry point utama ────────────────────────────────────────────────────────
 
-const handleDataQuery = async (messageText, senderPhone, senderName) => {
+const handleDataQuery = async (messageText, senderPhone, senderName, historyContext = '') => {
   let queryData;
 
   const mentionedName = extractMentionedName(messageText);
@@ -74,7 +74,7 @@ const handleDataQuery = async (messageText, senderPhone, senderName) => {
     }
   }
 
-  return await generateDataAnswer(messageText, queryData, senderName);
+  return await generateDataAnswer(messageText, queryData, senderName, historyContext);
 };
 
 module.exports = { isDataQuery, handleDataQuery };

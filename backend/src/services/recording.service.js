@@ -7,6 +7,7 @@ const { appendRecording, upsertKambing, upsertPeternak } = require('./sheets.ser
 const { sendTextMessage } = require('./whatsapp.service');
 const { isDataQuery, handleDataQuery } = require('./query.service');
 const { verifySheetsConsistency } = require('./sync.service');
+const { buildHistoryContext, logTurn, pruneHistory } = require('./chat-history.service');
 
 const formatTimestamp = () =>
   new Date().toLocaleString('id-ID', {
@@ -17,6 +18,39 @@ const formatTimestamp = () =>
     hour: '2-digit',
     minute: '2-digit',
   });
+
+// ─── Fallback untuk pesan non-teks ────────────────────────────────────────────
+
+const UNSUPPORTED_MESSAGE_TAGS = {
+  image: '[image]',
+  sticker: '[sticker]',
+  video: '[video]',
+  audio: '[audio]',
+  document: '[document]',
+  location: '[location]',
+  contacts: '[contacts]',
+};
+
+const UNSUPPORTED_MESSAGE_REPLIES = {
+  image: 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏 Boleh diketik ulang laporannya?',
+  sticker: 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏 Boleh diketik ulang laporannya?',
+  video: 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏 Boleh diketik ulang laporannya?',
+  audio: 'Maaf, saya belum bisa mendengarkan pesan suara, Pak/Bu 🙏 Boleh diketik saja laporannya?',
+};
+
+const DEFAULT_UNSUPPORTED_REPLY = 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏';
+
+const handleUnsupportedMessage = async (messageType, senderPhone, senderName) => {
+  const tag = UNSUPPORTED_MESSAGE_TAGS[messageType] || `[${messageType}]`;
+  const reply = UNSUPPORTED_MESSAGE_REPLIES[messageType] || DEFAULT_UNSUPPORTED_REPLY;
+
+  await sendTextMessage(senderPhone, reply);
+  logTurn(senderPhone, tag, reply).catch((err) =>
+    console.error('❌ Gagal mencatat riwayat pesan unsupported:', err.message)
+  );
+
+  return { state: 'unsupported_message_type', type: messageType };
+};
 
 // ─── Deteksi konfirmasi / penolakan secara rule-based (tanpa AI) ─────────────
 
@@ -128,6 +162,22 @@ const saveReport = async (pendingData, peternak) => {
 // ─── Entry point utama ────────────────────────────────────────────────────────
 
 const handleMessage = async (messageText, senderPhone, senderName) => {
+  pruneHistory(senderPhone).catch((err) =>
+    console.error('❌ Gagal membersihkan riwayat percakapan lama:', err.message)
+  );
+
+  let historyContext = '';
+  try {
+    historyContext = await buildHistoryContext(senderPhone);
+  } catch (err) {
+    console.error('❌ Gagal mengambil riwayat percakapan:', err.message);
+  }
+
+  const logReply = (reply) =>
+    logTurn(senderPhone, messageText, reply).catch((err) =>
+      console.error('❌ Gagal mencatat riwayat percakapan:', err.message)
+    );
+
   const session = await getSession(senderPhone);
 
   // ── State: awaiting_confirmation ─────────────────────────────────────────
@@ -142,23 +192,36 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
       const { kambing } = await saveReport(session.data, peternak);
       const reply = buildSuksesMessage(session.data.parsed, session.data.nomorTelinga, peternak.nama);
       await sendTextMessage(senderPhone, reply);
+      logReply(reply);
       return { state: 'saved', nomorTelinga: kambing.nomor_telinga };
     }
 
     if (isKonfirmasiTidak(messageText)) {
       await clearSession(senderPhone);
-      await sendTextMessage(
-        senderPhone,
-        '❌ Laporan dibatalkan.\n\nSilakan kirim ulang laporan yang benar ya, Pak/Bu. 🙏'
-      );
+      const reply = '❌ Laporan dibatalkan.\n\nSilakan kirim ulang laporan yang benar ya, Pak/Bu. 🙏';
+      await sendTextMessage(senderPhone, reply);
+      logReply(reply);
       return { state: 'cancelled' };
     }
 
-    // Pesan tidak jelas ya/tidak — cek apakah ini revisi laporan atau pertanyaan biasa
+    // Pesan tidak jelas ya/tidak — cek apakah ini revisi, pembatalan tidak langsung, atau pertanyaan
     try {
-      const classification = await classifyMessageInConfirmation(messageText, senderName, session.data);
+      const classification = await classifyMessageInConfirmation(
+        messageText,
+        senderName,
+        session.data,
+        historyContext
+      );
 
-      if (classification.isRevisi) {
+      if (classification.intent === 'PEMBATALAN') {
+        await clearSession(senderPhone);
+        const reply = '❌ Laporan dibatalkan.\n\nSilakan kirim ulang laporan yang benar ya, Pak/Bu. 🙏';
+        await sendTextMessage(senderPhone, reply);
+        logReply(reply);
+        return { state: 'cancelled' };
+      }
+
+      if (classification.intent === 'REVISI') {
         // User mengirim revisi laporan — ganti data pending dengan yang baru
         const parsed = classification.parsed;
         const nomorTelingaRaw = (parsed.nomor_telinga || '').trim();
@@ -171,10 +234,9 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
           // Revisi tanpa nomor telinga — tanya nomor telinga
           await clearSession(senderPhone);
           await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
-          await sendTextMessage(
-            senderPhone,
-            `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
-          );
+          const reply = `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
+          await sendTextMessage(senderPhone, reply);
+          logReply(reply);
           return { state: 'awaiting_nomor_telinga' };
         }
 
@@ -182,29 +244,29 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
         const newSessionData = { parsed, nomorTelinga, namaPeternak };
         await clearSession(senderPhone);
         await setSession(senderPhone, 'awaiting_confirmation', newSessionData);
-        const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
-        await sendTextMessage(
-          senderPhone,
-          `🔄 *Laporan diperbarui. Berikut ringkasan terbaru:*\n\n${reply}`
-        );
+        const summary = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
+        const reply = `🔄 *Laporan diperbarui. Berikut ringkasan terbaru:*\n\n${summary}`;
+        await sendTextMessage(senderPhone, reply);
+        logReply(reply);
         return { state: 'awaiting_confirmation' };
       }
 
-      // Bukan revisi — jawab pertanyaan/obrolan, pertahankan sesi konfirmasi
+      // PERTANYAAN — jawab pertanyaan/obrolan, pertahankan sesi konfirmasi
       const chatReply = await generateChatReply(
         messageText,
         senderName,
-        'User masih punya laporan yang menunggu konfirmasi. Setelah menjawab, ingatkan user untuk membalas ya/tidak untuk laporannya.'
+        'User masih punya laporan yang menunggu konfirmasi. Setelah menjawab, ingatkan user untuk membalas ya/tidak untuk laporannya.',
+        historyContext
       );
       await sendTextMessage(senderPhone, chatReply);
+      logReply(chatReply);
       return { state: 'chat_while_pending' };
     } catch (err) {
       console.error('❌ Error classifying message in confirmation:', err);
       // Fallback — ingatkan user
-      await sendTextMessage(
-        senderPhone,
-        'Mohon balas *ya* untuk menyimpan laporan, atau *tidak* untuk membatalkan. 🙏'
-      );
+      const reply = 'Mohon balas *ya* untuk menyimpan laporan, atau *tidak* untuk membatalkan. 🙏';
+      await sendTextMessage(senderPhone, reply);
+      logReply(reply);
       return { state: 'waiting_clarification' };
     }
   }
@@ -213,10 +275,9 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   if (session?.state === 'awaiting_nomor_telinga') {
     const nomorTelinga = messageText.replace(/\D/g, ''); // Ambil hanya angka bulat
     if (!nomorTelinga) {
-      await sendTextMessage(
-        senderPhone,
-        'Mohon masukkan nomor telinga kambing berupa angka bulat saja ya, Pak/Bu.\n_(Contoh: 12, 105)_'
-      );
+      const reply = 'Mohon masukkan nomor telinga kambing berupa angka bulat saja ya, Pak/Bu.\n_(Contoh: 12, 105)_';
+      await sendTextMessage(senderPhone, reply);
+      logReply(reply);
       return { state: 'waiting_nomor_telinga' };
     }
 
@@ -227,19 +288,19 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
     const reply = buildKonfirmasiMessage(session.data.parsed, nomorTelinga, session.data.namaPeternak);
     await sendTextMessage(senderPhone, reply);
+    logReply(reply);
     return { state: 'awaiting_confirmation' };
   }
 
   // ── Tidak ada sesi aktif — proses pesan baru dengan AI ───────────────────
   let parsed;
   try {
-    parsed = await parseMessage(messageText, senderName);
+    parsed = await parseMessage(messageText, senderName, historyContext);
   } catch (err) {
     console.error('❌ Gagal parsing pesan:', err);
-    await sendTextMessage(
-      senderPhone,
-      'Maaf, sistem sedang gangguan. Silakan coba lagi beberapa menit lagi ya, Pak/Bu. 🙏'
-    );
+    const reply = 'Maaf, sistem sedang gangguan. Silakan coba lagi beberapa menit lagi ya, Pak/Bu. 🙏';
+    await sendTextMessage(senderPhone, reply);
+    logReply(reply);
     return { state: 'error' };
   }
 
@@ -248,8 +309,9 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     if (isDataQuery(messageText)) {
       // Ada kata kunci data/ternak → query DB dan jawab
       try {
-        const dataReply = await handleDataQuery(messageText, senderPhone, senderName);
+        const dataReply = await handleDataQuery(messageText, senderPhone, senderName, historyContext);
         await sendTextMessage(senderPhone, dataReply);
+        logReply(dataReply);
         return { state: 'data_query_replied' };
       } catch (err) {
         console.error('❌ Gagal menangani data query:', err);
@@ -260,11 +322,12 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     // Pesan umum/obrolan → balas dengan chat ramah
     let reply;
     try {
-      reply = await generateChatReply(messageText, senderName);
+      reply = await generateChatReply(messageText, senderName, null, historyContext);
     } catch {
       reply = 'Halo! Ada yang bisa saya bantu? Silakan kirim laporan ternak kambing Anda ya, Pak/Bu. 🐐';
     }
     await sendTextMessage(senderPhone, reply);
+    logReply(reply);
     return { state: 'chat_replied' };
   }
 
@@ -276,10 +339,9 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   if (!nomorTelinga) {
     // Nomor telinga tidak disebutkan — tanya dulu tanpa AI
     await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
-    await sendTextMessage(
-      senderPhone,
-      `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`
-    );
+    const reply = `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
+    await sendTextMessage(senderPhone, reply);
+    logReply(reply);
     return { state: 'awaiting_nomor_telinga' };
   }
 
@@ -287,7 +349,8 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   await setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak });
   const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
   await sendTextMessage(senderPhone, reply);
+  logReply(reply);
   return { state: 'awaiting_confirmation' };
 };
 
-module.exports = { handleMessage };
+module.exports = { handleMessage, handleUnsupportedMessage };

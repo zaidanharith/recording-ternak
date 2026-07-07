@@ -1,5 +1,5 @@
 const config = require('../config');
-const { handleMessage } = require('../services/recording.service');
+const { handleMessage, handleUnsupportedMessage } = require('../services/recording.service');
 
 const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
@@ -30,17 +30,23 @@ const handleWebhookEvent = async (req, res) => {
     const value = changes?.value;
     const message = value?.messages?.[0];
 
-    if (!message || message.type !== 'text') {
+    if (!message) {
       return res.status(200).send('EVENT_RECEIVED');
     }
 
     const senderPhone = message.from;
     const senderName = value.contacts?.[0]?.profile?.name || senderPhone;
-    const messageText = message.text.body;
 
-    console.log(`📩 [${senderName}] ${messageText}`);
+    let result;
+    if (message.type === 'text') {
+      const messageText = message.text.body;
+      console.log(`📩 [${senderName}] ${messageText}`);
+      result = await handleMessage(messageText, senderPhone, senderName);
+    } else {
+      console.log(`📩 [${senderName}] <${message.type}>`);
+      result = await handleUnsupportedMessage(message.type, senderPhone, senderName);
+    }
 
-    const result = await handleMessage(messageText, senderPhone, senderName);
     console.log(`✅ State: ${result.state}`);
     res.status(200).send('EVENT_RECEIVED');
   } catch (error) {

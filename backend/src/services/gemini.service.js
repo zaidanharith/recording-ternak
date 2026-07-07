@@ -32,10 +32,11 @@ const getTodayContext = () => {
  * Parse pesan peternak untuk mengekstrak data laporan ternak.
  * Kembalikan JSON dengan field data ternak, atau { bukan_laporan_ternak: true }.
  */
-const parseMessage = async (messageText, senderName) => {
+const parseMessage = async (messageText, senderName, historyContext = '') => {
   const todayContext = getTodayContext();
+  const historyBlock = historyContext ? `${historyContext}\n\n` : '';
 
-  const prompt = `Kamu adalah sistem pencatat data ternak KAMBING.
+  const prompt = `${historyBlock}Kamu adalah sistem pencatat data ternak KAMBING.
 Hari ini: ${todayContext}
 Pengirim: ${senderName}
 Pesan: "${messageText}"
@@ -57,17 +58,18 @@ Aturan:
 };
 
 /**
- * Tentukan apakah pesan saat ini merupakan laporan baru/revisi laporan,
- * atau sekadar obrolan, saat user ada di sesi awaiting_confirmation.
+ * Tentukan intent pesan saat user ada di sesi awaiting_confirmation.
  *
- * Mengembalikan:
- *   { isRevisi: true, parsed } — jika pesan mengandung data laporan
- *   { isRevisi: false }       — jika pesan hanya obrolan biasa
+ * Mengembalikan salah satu:
+ *   { intent: 'REVISI', parsed }  — pesan mengandung data laporan baru/revisi
+ *   { intent: 'PEMBATALAN' }      — pembatalan/penundaan tidak langsung
+ *   { intent: 'PERTANYAAN' }      — pertanyaan atau obrolan biasa
  */
-const classifyMessageInConfirmation = async (messageText, senderName, existingData) => {
+const classifyMessageInConfirmation = async (messageText, senderName, existingData, historyContext = '') => {
   const todayContext = getTodayContext();
+  const historyBlock = historyContext ? `${historyContext}\n\n` : '';
 
-  const prompt = `Kamu sistem pencatat data ternak KAMBING.
+  const prompt = `${historyBlock}Kamu sistem pencatat data ternak KAMBING.
 Hari ini: ${todayContext}
 Pengirim: ${senderName}
 
@@ -75,11 +77,14 @@ User baru saja menerima ringkasan laporan kambing dan mengirim pesan baru.
 Pesan baru: "${messageText}"
 
 Tentukan apakah pesan ini:
-A) Merupakan laporan/revisi baru (mengandung data ternak: nomor telinga, tanggal, jumlah anak, dll)
-B) Hanya pertanyaan atau obrolan biasa (tidak ada data ternak)
+A) REVISI — merupakan laporan/revisi baru (mengandung data ternak: nomor telinga, tanggal, jumlah anak, dll)
+B) PEMBATALAN — pembatalan atau penundaan tidak langsung terhadap laporan yang sedang menunggu konfirmasi
+   (contoh: "nanti aja", "gajadi", "batal aja deh"), meski bukan kata "tidak" secara literal
+C) PERTANYAAN — pertanyaan atau obrolan biasa, tidak terkait pembatalan maupun revisi laporan
 
-Jika A, ekstrak datanya ke JSON dengan field sama seperti laporan normal.
-Jika B, kembalikan: { "bukan_laporan_ternak": true }
+Jika A, kembalikan JSON: { "intent": "REVISI", ...field data laporan seperti biasa }
+Jika B, kembalikan: { "intent": "PEMBATALAN" }
+Jika C, kembalikan: { "intent": "PERTANYAAN" }
 
 TANGGAL: Normalisasi ke format DD/MM/YYYY. Gunakan tahun saat ini jika tidak disebutkan.
 Kembalikan HANYA JSON (tanpa markdown).`;
@@ -89,21 +94,24 @@ Kembalikan HANYA JSON (tanpa markdown).`;
   const jsonText = rawText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
   const parsed = JSON.parse(jsonText);
 
-  if (parsed.bukan_laporan_ternak) return { isRevisi: false };
-  return { isRevisi: true, parsed };
+  if (parsed.intent === 'REVISI') return { intent: 'REVISI', parsed };
+  if (parsed.intent === 'PEMBATALAN') return { intent: 'PEMBATALAN' };
+  return { intent: 'PERTANYAAN' };
 };
 
 /**
  * Buat balasan ramah untuk pesan non-laporan.
  * Hemat token: model ringan, output pendek.
  */
-const generateChatReply = async (messageText, senderName, context = null) => {
+const generateChatReply = async (messageText, senderName, context = null, historyContext = '') => {
   const contextInfo = context
     ? `\nKonteks tambahan: ${context}`
     : '';
+  const historyBlock = historyContext ? `${historyContext}\n\n` : '';
 
-  const prompt = `Kamu asisten WhatsApp kelompok peternak kambing di Jawa Timur.
+  const prompt = `${historyBlock}Kamu asisten WhatsApp kelompok peternak kambing di Jawa Timur.
 Balas pesan berikut dengan ramah, singkat, bahasa Indonesia yang mudah dipahami peternak desa.
+Pesan boleh tentang apa saja, tidak harus soal ternak — jawab pertanyaannya secara nyata, jangan hanya mengarahkan kembali ke topik ternak.
 Jika ada campuran bahasa Jawa, tetap balas bahasa Indonesia.
 Nama pengirim: ${senderName}
 Pesan: "${messageText}"${contextInfo}
@@ -137,8 +145,10 @@ const callWithRetry = async (fn, retries = 3, delay = 1000) => {
  * Jawab pertanyaan user berdasarkan data dari database.
  * Data dikirim sebagai JSON ringkas agar token minimal.
  */
-const generateDataAnswer = async (messageText, dbDataJson, senderName) => {
-  const prompt = `Kamu asisten WhatsApp kelompok peternak kambing di Jawa Timur.
+const generateDataAnswer = async (messageText, dbDataJson, senderName, historyContext = '') => {
+  const historyBlock = historyContext ? `${historyContext}\n\n` : '';
+
+  const prompt = `${historyBlock}Kamu asisten WhatsApp kelompok peternak kambing di Jawa Timur.
 Jawab pertanyaan peternak berdasarkan DATA TERNAK di bawah ini.
 Bahasa: Indonesia sederhana, mudah dipahami peternak desa.
 Pengirim: ${senderName}
