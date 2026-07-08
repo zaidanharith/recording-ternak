@@ -8,6 +8,8 @@ const { sendTextMessage } = require('./whatsapp.service');
 const { isDataQuery, handleDataQuery } = require('./query.service');
 const { verifySheetsConsistency } = require('./sync.service');
 const { buildHistoryContext, logTurn, pruneHistory } = require('./chat-history.service');
+const { getMediaUrl, downloadMedia } = require('./whatsapp.service');
+const cloudinaryService = require('./cloudinary.service');
 
 const formatTimestamp = () =>
   new Date().toLocaleString('id-ID', {
@@ -39,6 +41,10 @@ const UNSUPPORTED_MESSAGE_REPLIES = {
 };
 
 const DEFAULT_UNSUPPORTED_REPLY = 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏';
+
+const ALLOWED_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png'];
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const PENDING_SESSION_STATES = ['awaiting_confirmation', 'awaiting_nomor_telinga'];
 
 const handleUnsupportedMessage = async (messageType, senderPhone, senderName) => {
   const tag = UNSUPPORTED_MESSAGE_TAGS[messageType] || `[${messageType}]`;
@@ -356,4 +362,47 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
   return { state: 'awaiting_confirmation' };
 };
 
-module.exports = { handleMessage, handleUnsupportedMessage };
+const handleImageMessage = async (mediaId, caption, senderPhone, senderName) => {
+  const trimmedCaption = (caption || '').trim();
+  const session = await getSession(senderPhone);
+  const hasPendingSession = session && PENDING_SESSION_STATES.includes(session.state);
+
+  if (!trimmedCaption && !hasPendingSession) {
+    const reply = 'Terima kasih fotonya, Pak/Bu 📸 Boleh minta juga laporannya dalam bentuk teks?';
+    await sendTextMessage(senderPhone, reply);
+    logTurn(senderPhone, '[image]', reply).catch((err) =>
+      console.error('❌ Gagal mencatat riwayat pesan foto:', err.message)
+    );
+    return { state: 'photo_without_context' };
+  }
+
+  const { url: mediaUrl, mimeType } = await getMediaUrl(mediaId);
+
+  if (!ALLOWED_PHOTO_MIME_TYPES.includes(mimeType)) {
+    const reply = 'Maaf, format fotonya belum didukung, Pak/Bu 🙏 Mohon kirim foto JPEG atau PNG.';
+    await sendTextMessage(senderPhone, reply);
+    return { state: 'invalid_photo' };
+  }
+
+  const buffer = await downloadMedia(mediaUrl);
+
+  if (buffer.length > MAX_PHOTO_SIZE_BYTES) {
+    const reply = 'Maaf, ukuran fotonya terlalu besar, Pak/Bu 🙏 Mohon kirim foto di bawah 5MB.';
+    await sendTextMessage(senderPhone, reply);
+    return { state: 'invalid_photo' };
+  }
+
+  const { url, publicId } = await cloudinaryService.uploadImage(buffer, 'recording-ternak/whatsapp');
+  const photo = { url, publicId };
+
+  if (!trimmedCaption) {
+    await setSession(senderPhone, session.state, { ...session.data, photo });
+    const reply = '📸 Foto diterima, sudah ditambahkan ke laporan yang sedang diproses.';
+    await sendTextMessage(senderPhone, reply);
+    return { state: 'photo_attached' };
+  }
+
+  return handleMessage(trimmedCaption, senderPhone, senderName, photo);
+};
+
+module.exports = { handleMessage, handleUnsupportedMessage, handleImageMessage };

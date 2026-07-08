@@ -1,5 +1,5 @@
 const config = require('../config');
-const { handleMessage, handleUnsupportedMessage } = require('../services/recording.service');
+const { handleMessage, handleUnsupportedMessage, handleImageMessage } = require('../services/recording.service');
 
 const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
@@ -42,6 +42,10 @@ const handleWebhookEvent = async (req, res) => {
       const messageText = message.text.body;
       console.log(`📩 [${senderName}] ${messageText}`);
       result = await handleMessage(messageText, senderPhone, senderName);
+    } else if (message.type === 'image') {
+      const caption = message.image?.caption || '';
+      console.log(`📩 [${senderName}] <image> ${caption}`);
+      result = await handleImageMessage(message.image.id, caption, senderPhone, senderName);
     } else {
       console.log(`📩 [${senderName}] <${message.type}>`);
       result = await handleUnsupportedMessage(message.type, senderPhone, senderName);
