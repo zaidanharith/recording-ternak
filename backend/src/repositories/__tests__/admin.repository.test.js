@@ -15,6 +15,7 @@ const {
   createAdmin,
   updateAdmin,
   deleteAdmin,
+  linkGoogleId,
 } = require('../admin.repository');
 
 describe('findAdminByEmail', () => {
@@ -76,5 +77,29 @@ describe('deleteAdmin', () => {
 
     expect(prisma.admin.delete).toHaveBeenCalledWith({ where: { id: 'admin-2' } });
     expect(result).toEqual({ id: 'admin-2' });
+  });
+});
+
+describe('linkGoogleId', () => {
+  it('updates only googleId when avatarUrl is not provided', async () => {
+    prisma.admin.update.mockResolvedValue({ id: 'admin-1', googleId: 'g-1' });
+
+    await linkGoogleId('admin-1', 'g-1');
+
+    expect(prisma.admin.update).toHaveBeenCalledWith({
+      where: { id: 'admin-1' },
+      data: { googleId: 'g-1' },
+    });
+  });
+
+  it('includes avatarUrl in the update when provided', async () => {
+    prisma.admin.update.mockResolvedValue({ id: 'admin-1', googleId: 'g-1', avatarUrl: 'https://pic.example/a.png' });
+
+    await linkGoogleId('admin-1', 'g-1', 'https://pic.example/a.png');
+
+    expect(prisma.admin.update).toHaveBeenCalledWith({
+      where: { id: 'admin-1' },
+      data: { googleId: 'g-1', avatarUrl: 'https://pic.example/a.png' },
+    });
   });
 });

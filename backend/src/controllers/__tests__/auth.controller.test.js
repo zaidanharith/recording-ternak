@@ -1,15 +1,17 @@
 const adminRepository = require('../../repositories/admin.repository');
 const authService = require('../../services/auth.service');
 
+const mockVerifyIdToken = jest.fn();
+
 jest.mock('../../repositories/admin.repository');
 jest.mock('../../services/auth.service');
 jest.mock('google-auth-library', () => ({
   OAuth2Client: jest.fn().mockImplementation(() => ({
-    verifyIdToken: jest.fn(),
+    verifyIdToken: mockVerifyIdToken,
   })),
 }));
 
-const { login, me, updateMe } = require('../auth.controller');
+const { login, googleLogin, me, updateMe } = require('../auth.controller');
 
 const buildRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -68,6 +70,84 @@ describe('login', () => {
     await login(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe('googleLogin', () => {
+  const buildTicket = (payload) => ({ getPayload: () => payload });
+
+  it('links Google account and sets avatarUrl when admin has none yet', async () => {
+    mockVerifyIdToken.mockResolvedValue(
+      buildTicket({
+        sub: 'g-1',
+        email: 'budi@example.com',
+        email_verified: true,
+        picture: 'https://pic.example/budi.png',
+      }),
+    );
+
+    adminRepository.findAdminByGoogleId.mockResolvedValue(null);
+    adminRepository.findAdminByEmail.mockResolvedValue({
+      id: 'admin-1', email: 'budi@example.com', name: 'Budi', role: 'ADMIN', avatarUrl: null,
+    });
+    adminRepository.linkGoogleId.mockResolvedValue({
+      id: 'admin-1', email: 'budi@example.com', name: 'Budi', role: 'ADMIN', avatarUrl: 'https://pic.example/budi.png', googleId: 'g-1',
+    });
+    authService.generateToken.mockReturnValue('signed.jwt.token');
+
+    const req = { body: { idToken: 'valid-token' } };
+    const res = buildRes();
+
+    await googleLogin(req, res);
+
+    expect(adminRepository.linkGoogleId).toHaveBeenCalledWith('admin-1', 'g-1', 'https://pic.example/budi.png');
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('does not overwrite an existing avatarUrl when linking Google', async () => {
+    mockVerifyIdToken.mockResolvedValue(
+      buildTicket({
+        sub: 'g-2',
+        email: 'siti@example.com',
+        email_verified: true,
+        picture: 'https://pic.example/siti-google.png',
+      }),
+    );
+
+    adminRepository.findAdminByGoogleId.mockResolvedValue(null);
+    adminRepository.findAdminByEmail.mockResolvedValue({
+      id: 'admin-2', email: 'siti@example.com', name: 'Siti', role: 'ADMIN', avatarUrl: 'https://pic.example/siti-manual.png',
+    });
+    adminRepository.linkGoogleId.mockResolvedValue({
+      id: 'admin-2', email: 'siti@example.com', name: 'Siti', role: 'ADMIN', avatarUrl: 'https://pic.example/siti-manual.png', googleId: 'g-2',
+    });
+    authService.generateToken.mockReturnValue('signed.jwt.token');
+
+    const req = { body: { idToken: 'valid-token' } };
+    const res = buildRes();
+
+    await googleLogin(req, res);
+
+    expect(adminRepository.linkGoogleId).toHaveBeenCalledWith('admin-2', 'g-2', undefined);
+  });
+
+  it('does not call linkGoogleId when the admin is already linked', async () => {
+    mockVerifyIdToken.mockResolvedValue(
+      buildTicket({ sub: 'g-3', email: 'existing@example.com', email_verified: true, picture: 'https://pic.example/x.png' }),
+    );
+
+    adminRepository.findAdminByGoogleId.mockResolvedValue({
+      id: 'admin-3', email: 'existing@example.com', name: 'Existing', role: 'ADMIN', avatarUrl: null, googleId: 'g-3',
+    });
+    authService.generateToken.mockReturnValue('signed.jwt.token');
+
+    const req = { body: { idToken: 'valid-token' } };
+    const res = buildRes();
+
+    await googleLogin(req, res);
+
+    expect(adminRepository.linkGoogleId).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 });
 

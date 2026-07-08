@@ -82,7 +82,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    const { sub: googleId, email, email_verified: emailVerified } = payload;
+    const { sub: googleId, email, email_verified: emailVerified, picture } = payload;
 
     if (!email || emailVerified === false) {
       return res.status(400).json({
@@ -103,7 +103,8 @@ exports.googleLogin = async (req, res) => {
         });
       }
 
-      admin = await adminRepository.linkGoogleId(admin.id, googleId);
+      const avatarToSet = admin.avatarUrl ? undefined : picture;
+      admin = await adminRepository.linkGoogleId(admin.id, googleId, avatarToSet);
     }
 
     const token = authService.generateToken(admin);

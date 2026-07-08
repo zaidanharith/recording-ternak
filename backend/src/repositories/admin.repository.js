@@ -30,8 +30,10 @@ const deleteAdmin = async (id) => {
   return await prisma.admin.delete({ where: { id } });
 };
 
-const linkGoogleId = async (id, googleId) => {
-  return await prisma.admin.update({ where: { id }, data: { googleId } });
+const linkGoogleId = async (id, googleId, avatarUrl) => {
+  const data = { googleId };
+  if (avatarUrl) data.avatarUrl = avatarUrl;
+  return await prisma.admin.update({ where: { id }, data });
 };
 
 module.exports = {
