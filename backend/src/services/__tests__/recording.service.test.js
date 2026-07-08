@@ -139,6 +139,45 @@ describe('handleImageMessage', () => {
       expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' } })
     );
     expect(result.state).toBe('awaiting_confirmation');
+    expect(cloudinaryService.deleteImage).not.toHaveBeenCalled();
+  });
+
+  it('deletes the uploaded photo when the caption resolves to a non-attaching state (bukan laporan ternak)', async () => {
+    getSession.mockResolvedValue(null);
+    whatsappService.getMediaUrl.mockResolvedValue({ url: 'https://lookaside.fbsbx.com/media/abc', mimeType: 'image/jpeg' });
+    whatsappService.downloadMedia.mockResolvedValue(Buffer.from('bytes'));
+    cloudinaryService.uploadImage.mockResolvedValue({ url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' });
+    parseMessage.mockResolvedValue({ bukan_laporan_ternak: true });
+
+    const result = await handleImageMessage('media-1', 'halo apa kabar', '628123', 'Budi');
+
+    expect(result.state).toBe('chat_replied');
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/whatsapp/wa');
+  });
+
+  it('deletes the previous photo when a second photo overwrites an already-attached session photo', async () => {
+    getSession.mockResolvedValue({
+      state: 'awaiting_confirmation',
+      data: {
+        parsed: { nama_peternak: 'Budi' },
+        nomorTelinga: '12',
+        namaPeternak: 'Budi',
+        photo: { url: 'https://res.cloudinary.com/demo/old.jpg', publicId: 'recording-ternak/whatsapp/old' },
+      },
+    });
+    whatsappService.getMediaUrl.mockResolvedValue({ url: 'https://lookaside.fbsbx.com/media/abc', mimeType: 'image/jpeg' });
+    whatsappService.downloadMedia.mockResolvedValue(Buffer.from('bytes'));
+    cloudinaryService.uploadImage.mockResolvedValue({ url: 'https://res.cloudinary.com/demo/new.jpg', publicId: 'recording-ternak/whatsapp/new' });
+
+    const result = await handleImageMessage('media-1', '', '628123', 'Budi');
+
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/whatsapp/old');
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'awaiting_confirmation',
+      expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/new.jpg', publicId: 'recording-ternak/whatsapp/new' } })
+    );
+    expect(result.state).toBe('photo_attached');
   });
 
   it('rejects an unsupported mime type without uploading to Cloudinary', async () => {

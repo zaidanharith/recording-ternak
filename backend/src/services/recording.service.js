@@ -10,6 +10,7 @@ const { verifySheetsConsistency } = require('./sync.service');
 const { buildHistoryContext, logTurn, pruneHistory } = require('./chat-history.service');
 const { getMediaUrl, downloadMedia } = require('./whatsapp.service');
 const cloudinaryService = require('./cloudinary.service');
+const { ALLOWED_MIME_TYPES: ALLOWED_PHOTO_MIME_TYPES, MAX_SIZE_BYTES: MAX_PHOTO_SIZE_BYTES } = require('../middlewares/upload.middleware');
 
 const formatTimestamp = () =>
   new Date().toLocaleString('id-ID', {
@@ -42,9 +43,8 @@ const UNSUPPORTED_MESSAGE_REPLIES = {
 
 const DEFAULT_UNSUPPORTED_REPLY = 'Maaf, saya baru bisa membaca pesan teks, Pak/Bu 🙏';
 
-const ALLOWED_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png'];
-const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const PENDING_SESSION_STATES = ['awaiting_confirmation', 'awaiting_nomor_telinga'];
+const ATTACHED_STATES = ['saved', 'awaiting_confirmation', 'awaiting_nomor_telinga'];
 
 const handleUnsupportedMessage = async (messageType, senderPhone, senderName) => {
   const tag = UNSUPPORTED_MESSAGE_TAGS[messageType] || `[${messageType}]`;
@@ -396,13 +396,20 @@ const handleImageMessage = async (mediaId, caption, senderPhone, senderName) => 
   const photo = { url, publicId };
 
   if (!trimmedCaption) {
+    if (session.data.photo?.publicId) {
+      cloudinaryService.deleteImage(session.data.photo.publicId);
+    }
     await setSession(senderPhone, session.state, { ...session.data, photo });
     const reply = '📸 Foto diterima, sudah ditambahkan ke laporan yang sedang diproses.';
     await sendTextMessage(senderPhone, reply);
     return { state: 'photo_attached' };
   }
 
-  return handleMessage(trimmedCaption, senderPhone, senderName, photo);
+  const result = await handleMessage(trimmedCaption, senderPhone, senderName, photo);
+  if (!ATTACHED_STATES.includes(result.state)) {
+    cloudinaryService.deleteImage(publicId);
+  }
+  return result;
 };
 
 module.exports = { handleMessage, handleUnsupportedMessage, handleImageMessage };
