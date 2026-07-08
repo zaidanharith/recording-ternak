@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { RoleGuard } from "@/components/common/role-guard";
+import { SortableTableHead } from "@/components/common/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { AdminFormDialog } from "@/features/admins/components/admin-form-dialog";
 import { useAsync } from "@/hooks/use-async";
+import { useSortableData } from "@/hooks/use-sortable-data";
 import { deleteAdmin, listAdmins } from "@/services/admin.service";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -32,6 +34,16 @@ const ROLE_LABEL: Record<string, string> = {
 function AkunContent() {
   const fetcher = useCallback(() => listAdmins(), []);
   const { data: admins, isLoading, refetch } = useAsync(fetcher);
+
+  const { sortedData, sortKey, sortDirection, toggleSort } = useSortableData(
+    admins ?? [],
+    {
+      name: (admin) => admin.name,
+      username: (admin) => admin.username,
+      email: (admin) => admin.email,
+      role: (admin) => admin.role,
+    },
+  );
 
   const handleDelete = async (id: string) => {
     try {
@@ -63,15 +75,43 @@ function AkunContent() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nama</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <SortableTableHead
+                sortKey="name"
+                currentKey={sortKey}
+                currentDirection={sortDirection}
+                onSort={toggleSort}
+              >
+                Nama
+              </SortableTableHead>
+              <SortableTableHead
+                sortKey="username"
+                currentKey={sortKey}
+                currentDirection={sortDirection}
+                onSort={toggleSort}
+              >
+                Username
+              </SortableTableHead>
+              <SortableTableHead
+                sortKey="email"
+                currentKey={sortKey}
+                currentDirection={sortDirection}
+                onSort={toggleSort}
+              >
+                Email
+              </SortableTableHead>
+              <SortableTableHead
+                sortKey="role"
+                currentKey={sortKey}
+                currentDirection={sortDirection}
+                onSort={toggleSort}
+              >
+                Role
+              </SortableTableHead>
               <TableHead className="w-1" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {admins.map((admin) => (
+            {sortedData.map((admin) => (
               <TableRow key={admin.id}>
                 <TableCell className="font-medium">{admin.name}</TableCell>
                 <TableCell>{admin.username}</TableCell>

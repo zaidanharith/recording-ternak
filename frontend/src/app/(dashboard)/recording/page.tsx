@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { PaginationBar } from "@/components/common/pagination-bar";
+import { SortableTableHead } from "@/components/common/sortable-table-head";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ import {
 } from "@/features/recordings/components/recording-badges";
 import { RecordingFormDialog } from "@/features/recordings/components/recording-form-dialog";
 import { useAsync } from "@/hooks/use-async";
+import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
 import { deleteRecording, listRecordings } from "@/services/recording.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -60,6 +62,17 @@ function RecordingPageContent() {
     [page, goatId, farmerId, status],
   );
   const { data, isLoading, refetch } = useAsync(fetcher);
+
+  const { sortedData, sortKey, sortDirection, toggleSort } = useSortableData(
+    data?.recordings ?? [],
+    {
+      goat: (recording) => recording.goat?.earTagNumber,
+      farmer: (recording) => recording.goat?.farmer?.name,
+      birthDate: (recording) => recording.birthDate,
+      source: (recording) => recording.source,
+      status: (recording) => recording.status,
+    },
+  );
 
   const canManage = canManageData(role);
 
@@ -110,17 +123,52 @@ function RecordingPageContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Foto</TableHead>
-                <TableHead>Kambing</TableHead>
-                <TableHead>Peternak</TableHead>
-                <TableHead>Tanggal Lahir</TableHead>
+                <SortableTableHead
+                  sortKey="goat"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Kambing
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="farmer"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Peternak
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="birthDate"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Tanggal Lahir
+                </SortableTableHead>
                 <TableHead>Anak (J/B)</TableHead>
-                <TableHead>Sumber</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableTableHead
+                  sortKey="source"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Sumber
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="status"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Status
+                </SortableTableHead>
                 <TableHead className="w-1" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.recordings.map((recording) => (
+              {sortedData.map((recording) => (
                 <TableRow key={recording.id}>
                   <TableCell>
                     {recording.photoUrl ? (
