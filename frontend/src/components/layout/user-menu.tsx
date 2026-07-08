@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLogout } from "@/hooks/use-logout";
 import { useAuthStore } from "@/stores/auth.store";
 
 function initials(name: string) {
@@ -27,14 +28,9 @@ function initials(name: string) {
 export function UserMenu() {
   const router = useRouter();
   const admin = useAuthStore((state) => state.admin);
-  const logout = useAuthStore((state) => state.logout);
+  const handleLogout = useLogout();
 
   if (!admin) return null;
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/");
-  };
 
   return (
     <DropdownMenu>
