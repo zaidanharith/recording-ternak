@@ -188,6 +188,9 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
 
   const session = await getSession(senderPhone);
   const carriedPhoto = photo || session?.data?.photo || null;
+  if (photo && session?.data?.photo?.publicId && session.data.photo.publicId !== photo.publicId) {
+    cloudinaryService.deleteImage(session.data.photo.publicId);
+  }
 
   // ── State: awaiting_confirmation ─────────────────────────────────────────
   if (session?.state === 'awaiting_confirmation') {

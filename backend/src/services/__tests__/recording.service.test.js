@@ -63,6 +63,34 @@ describe('handleMessage photo propagation', () => {
     );
   });
 
+  it('deletes the old session photo when a new photo replaces it via the caption path', async () => {
+    const OLD_PHOTO = { url: 'https://res.cloudinary.com/demo/old.jpg', publicId: 'recording-ternak/whatsapp/old' };
+    getSession.mockResolvedValue({
+      state: 'awaiting_nomor_telinga',
+      data: { parsed: { nama_peternak: 'Budi' }, namaPeternak: 'Budi', photo: OLD_PHOTO },
+    });
+
+    await handleMessage('12', '628123', 'Budi', PHOTO);
+
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledWith(OLD_PHOTO.publicId);
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'awaiting_confirmation',
+      expect.objectContaining({ photo: PHOTO })
+    );
+  });
+
+  it('does not delete the session photo when it is only carried forward with no new photo passed', async () => {
+    getSession.mockResolvedValue({
+      state: 'awaiting_nomor_telinga',
+      data: { parsed: { nama_peternak: 'Budi' }, namaPeternak: 'Budi', photo: PHOTO },
+    });
+
+    await handleMessage('12', '628123', 'Budi');
+
+    expect(cloudinaryService.deleteImage).not.toHaveBeenCalled();
+  });
+
   it('passes photoUrl/photoPublicId to createRecording on confirmation', async () => {
     getSession.mockResolvedValue({
       state: 'awaiting_confirmation',
