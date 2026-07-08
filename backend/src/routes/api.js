@@ -10,6 +10,7 @@ const followUpRoutes = require('./follow-up.route');
 const dashboardRoutes = require('./dashboard.route');
 const syncRoutes = require('./sync.route');
 const webhookRoutes = require('./webhook.route');
+const uploadsRoutes = require('./uploads.route');
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -24,6 +25,7 @@ router.get('/', (req, res) => {
       dashboard: '/api/dashboard',
       sync: '/api/sync',
       webhook: '/api/webhook',
+      uploads: '/api/uploads',
     },
   });
 });
@@ -37,5 +39,6 @@ router.use('/follow-ups', followUpRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/sync', syncRoutes);
 router.use('/webhook', webhookRoutes);
+router.use('/uploads', uploadsRoutes);
 
 module.exports = router;
