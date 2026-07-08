@@ -58,6 +58,7 @@ model Recording {
   status         RecordingStatus @default(PERLU_REVIEW)
   source         RecordingSource @default(WA)
   photoUrl       String?         @map("photo_url")
+  photoPublicId  String?         @map("photo_public_id")
   createdAt      DateTime        @default(now())
 
   @@map("recording")

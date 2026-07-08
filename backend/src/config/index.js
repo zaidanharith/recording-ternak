@@ -23,6 +23,12 @@ const config = {
     verifyToken:   process.env.WA_VERIFY_TOKEN,
   },
 
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey:    process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
+
   auth: {
     jwtSecret: process.env.JWT_SECRET || 'fallback_secret_for_development',
     jwtExpiresIn: '7d',
