@@ -27,6 +27,9 @@ export default function Home() {
           <p className="mt-1 text-sm text-muted-foreground">
             Masuk untuk mengelola data recording ternak
           </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Layanan oleh Bumdes Sumber Abadi Desa Besuki
+          </p>
         </div>
         <LoginForm />
       </div>
