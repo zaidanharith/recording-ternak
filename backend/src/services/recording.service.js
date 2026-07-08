@@ -99,7 +99,7 @@ const buildSuksesMessage = (parsed, nomorTelinga, namaPeternak) => {
 // ─── Simpan laporan yang sudah dikonfirmasi ke DB + Sheets ───────────────────
 
 const saveReport = async (pendingData, peternak) => {
-  const { parsed, nomorTelinga } = pendingData;
+  const { parsed, nomorTelinga, photo } = pendingData;
 
   // Simpan ke database
   const kambing = await findOrCreateGoat(nomorTelinga, peternak.id);
@@ -114,6 +114,8 @@ const saveReport = async (pendingData, peternak) => {
     target_penjualan: parsed.target_penjualan,
     terjual: parsed.terjual,
     catatan: parsed.catatan,
+    photoUrl: photo?.url,
+    photoPublicId: photo?.publicId,
   });
 
   const timestamp = formatTimestamp();
@@ -161,7 +163,7 @@ const saveReport = async (pendingData, peternak) => {
 
 // ─── Entry point utama ────────────────────────────────────────────────────────
 
-const handleMessage = async (messageText, senderPhone, senderName) => {
+const handleMessage = async (messageText, senderPhone, senderName, photo = null) => {
   pruneHistory(senderPhone).catch((err) =>
     console.error('❌ Gagal membersihkan riwayat percakapan lama:', err.message)
   );
@@ -179,6 +181,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     );
 
   const session = await getSession(senderPhone);
+  const carriedPhoto = photo || session?.data?.photo || null;
 
   // ── State: awaiting_confirmation ─────────────────────────────────────────
   if (session?.state === 'awaiting_confirmation') {
@@ -189,7 +192,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
       });
       await clearSession(senderPhone);
 
-      const { kambing } = await saveReport(session.data, peternak);
+      const { kambing } = await saveReport({ ...session.data, photo: carriedPhoto }, peternak);
       const reply = buildSuksesMessage(session.data.parsed, session.data.nomorTelinga, peternak.name);
       await sendTextMessage(senderPhone, reply);
       logReply(reply);
@@ -233,7 +236,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
         if (!nomorTelinga) {
           // Revisi tanpa nomor telinga — tanya nomor telinga
           await clearSession(senderPhone);
-          await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
+          await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak, photo: carriedPhoto });
           const reply = `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
           await sendTextMessage(senderPhone, reply);
           logReply(reply);
@@ -241,7 +244,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
         }
 
         // Revisi lengkap — tampilkan konfirmasi baru
-        const newSessionData = { parsed, nomorTelinga, namaPeternak };
+        const newSessionData = { parsed, nomorTelinga, namaPeternak, photo: carriedPhoto };
         await clearSession(senderPhone);
         await setSession(senderPhone, 'awaiting_confirmation', newSessionData);
         const summary = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
@@ -282,7 +285,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
     }
 
     // Update sesi dengan nomor telinga dan lanjut ke konfirmasi
-    const updatedData = { ...session.data, nomorTelinga };
+    const updatedData = { ...session.data, nomorTelinga, photo: carriedPhoto };
     await clearSession(senderPhone);
     await setSession(senderPhone, 'awaiting_confirmation', updatedData);
 
@@ -338,7 +341,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
 
   if (!nomorTelinga) {
     // Nomor telinga tidak disebutkan — tanya dulu tanpa AI
-    await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak });
+    await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak, photo: carriedPhoto });
     const reply = `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
     await sendTextMessage(senderPhone, reply);
     logReply(reply);
@@ -346,7 +349,7 @@ const handleMessage = async (messageText, senderPhone, senderName) => {
   }
 
   // Semua data cukup — kirim ringkasan konfirmasi
-  await setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak });
+  await setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak, photo: carriedPhoto });
   const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
   await sendTextMessage(senderPhone, reply);
   logReply(reply);

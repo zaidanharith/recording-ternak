@@ -12,7 +12,9 @@ const createRecording = async (recordingData) => {
       matingNumber: String(recordingData.perkawinan_ke || '-'),
       saleTarget: recordingData.target_penjualan || '-',
       sold: recordingData.terjual || '-',
-      notes: recordingData.catatan || '-'
+      notes: recordingData.catatan || '-',
+      photoUrl: recordingData.photoUrl || null,
+      photoPublicId: recordingData.photoPublicId || null,
     }
   });
 };

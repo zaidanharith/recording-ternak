@@ -37,3 +37,35 @@ describe('createManualRecording', () => {
     });
   });
 });
+
+describe('createRecording', () => {
+  it('persists photoUrl and photoPublicId when provided', async () => {
+    prisma.recording.create.mockResolvedValue({ id: 'r1' });
+
+    const { createRecording } = require('../recording.repository');
+    await createRecording({
+      kambingId: 'g1',
+      pengirim: 'Budi',
+      photoUrl: 'https://res.cloudinary.com/demo/wa.jpg',
+      photoPublicId: 'recording-ternak/whatsapp/wa',
+    });
+
+    expect(prisma.recording.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        photoUrl: 'https://res.cloudinary.com/demo/wa.jpg',
+        photoPublicId: 'recording-ternak/whatsapp/wa',
+      }),
+    });
+  });
+
+  it('defaults photo fields to null when not provided', async () => {
+    prisma.recording.create.mockResolvedValue({ id: 'r1' });
+
+    const { createRecording } = require('../recording.repository');
+    await createRecording({ kambingId: 'g1', pengirim: 'Budi' });
+
+    expect(prisma.recording.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ photoUrl: null, photoPublicId: null }),
+    });
+  });
+});
