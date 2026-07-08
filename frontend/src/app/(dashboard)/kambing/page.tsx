@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { PaginationBar } from "@/components/common/pagination-bar";
+import { SortableTableHead } from "@/components/common/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { GoatFormDialog } from "@/features/goats/components/goat-form-dialog";
 import { useAsync } from "@/hooks/use-async";
+import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
 import { deleteGoat, listGoats } from "@/services/goat.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -46,6 +48,15 @@ function KambingPageContent() {
     [page, farmerId],
   );
   const { data, isLoading, refetch } = useAsync(fetcher);
+
+  const { sortedData, sortKey, sortDirection, toggleSort } = useSortableData(
+    data?.goats ?? [],
+    {
+      earTagNumber: (goat) => goat.earTagNumber,
+      farmer: (goat) => goat.farmer?.name,
+      createdAt: (goat) => goat.createdAt,
+    },
+  );
 
   const canManage = canManageData(role);
 
@@ -98,14 +109,35 @@ function KambingPageContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No. Telinga</TableHead>
-                <TableHead>Peternak</TableHead>
-                <TableHead>Terdaftar</TableHead>
+                <SortableTableHead
+                  sortKey="earTagNumber"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  No. Telinga
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="farmer"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Peternak
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="createdAt"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Terdaftar
+                </SortableTableHead>
                 <TableHead className="w-1" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.goats.map((goat) => (
+              {sortedData.map((goat) => (
                 <TableRow key={goat.id}>
                   <TableCell className="font-medium">{goat.earTagNumber}</TableCell>
                   <TableCell>{goat.farmer?.name}</TableCell>

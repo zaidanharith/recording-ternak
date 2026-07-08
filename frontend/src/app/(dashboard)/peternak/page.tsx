@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { PaginationBar } from "@/components/common/pagination-bar";
+import { SortableTableHead } from "@/components/common/sortable-table-head";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +24,7 @@ import {
 import { FarmerFormDialog } from "@/features/farmers/components/farmer-form-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
 import { deleteFarmer, listFarmers } from "@/services/farmer.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -38,6 +40,15 @@ export default function PeternakPage() {
     [page, debouncedSearch],
   );
   const { data, isLoading, refetch } = useAsync(fetcher);
+
+  const { sortedData, sortKey, sortDirection, toggleSort } = useSortableData(
+    data?.farmers ?? [],
+    {
+      name: (farmer) => farmer.name,
+      whatsappPhone: (farmer) => farmer.whatsappPhone,
+      address: (farmer) => farmer.address,
+    },
+  );
 
   const canManage = canManageData(role);
 
@@ -86,14 +97,35 @@ export default function PeternakPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Nomor WhatsApp</TableHead>
-                <TableHead>Alamat</TableHead>
+                <SortableTableHead
+                  sortKey="name"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Nama
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="whatsappPhone"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Nomor WhatsApp
+                </SortableTableHead>
+                <SortableTableHead
+                  sortKey="address"
+                  currentKey={sortKey}
+                  currentDirection={sortDirection}
+                  onSort={toggleSort}
+                >
+                  Alamat
+                </SortableTableHead>
                 <TableHead className="w-1" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.farmers.map((farmer) => (
+              {sortedData.map((farmer) => (
                 <TableRow key={farmer.id}>
                   <TableCell>
                     <Link
