@@ -57,7 +57,7 @@ const getAllDataForQuery = async () => {
 
 const createManualRecording = async ({
   goatId, senderName, matingDate, birthDate, maleKidCount, femaleKidCount,
-  matingNumber, saleTarget, sold, notes, photoUrl,
+  matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId,
 }) => {
   return await prisma.recording.create({
     data: {
@@ -72,6 +72,7 @@ const createManualRecording = async ({
       sold: sold || '-',
       notes: notes || '-',
       photoUrl: photoUrl || null,
+      photoPublicId: photoPublicId || null,
       status: 'FINAL',
       source: 'MANUAL',
     },

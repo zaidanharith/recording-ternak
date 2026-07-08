@@ -1,4 +1,5 @@
 const recordingRepository = require('../repositories/recording.repository');
+const cloudinaryService = require('../services/cloudinary.service');
 
 const RECORDING_STATUSES = ['PERLU_REVIEW', 'FINAL'];
 
@@ -52,7 +53,7 @@ exports.createRecording = async (req, res) => {
   try {
     const {
       goatId, matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl,
+      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId,
     } = req.body;
 
     if (!goatId) {
@@ -63,7 +64,7 @@ exports.createRecording = async (req, res) => {
       goatId,
       senderName: req.user.name,
       matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl,
+      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId,
     });
 
     return res.status(201).json({
@@ -88,7 +89,7 @@ exports.updateRecording = async (req, res) => {
   try {
     const {
       matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl, status,
+      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId, status,
     } = req.body;
 
     if (status && !RECORDING_STATUSES.includes(status)) {
@@ -108,13 +109,26 @@ exports.updateRecording = async (req, res) => {
     if (sold !== undefined) updateData.sold = sold;
     if (notes !== undefined) updateData.notes = notes;
     if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+    if (photoPublicId !== undefined) updateData.photoPublicId = photoPublicId;
     if (status) updateData.status = status;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ success: false, message: 'Tidak ada data yang diubah.' });
     }
 
+    let oldPhotoPublicId = null;
+    if (photoUrl !== undefined) {
+      const existing = await recordingRepository.findRecordingById(req.params.id);
+      if (existing && existing.photoUrl !== photoUrl && existing.photoPublicId) {
+        oldPhotoPublicId = existing.photoPublicId;
+      }
+    }
+
     const recording = await recordingRepository.updateRecording(req.params.id, updateData);
+
+    if (oldPhotoPublicId) {
+      cloudinaryService.deleteImage(oldPhotoPublicId);
+    }
 
     return res.status(200).json({
       success: true,
@@ -136,7 +150,13 @@ exports.updateRecording = async (req, res) => {
 
 exports.deleteRecording = async (req, res) => {
   try {
+    const existing = await recordingRepository.findRecordingById(req.params.id);
     await recordingRepository.deleteRecording(req.params.id);
+
+    if (existing && existing.photoPublicId) {
+      cloudinaryService.deleteImage(existing.photoPublicId);
+    }
+
     return res.status(200).json({ success: true, message: 'Recording berhasil dihapus.' });
   } catch (error) {
     if (error.code === 'P2025') {
