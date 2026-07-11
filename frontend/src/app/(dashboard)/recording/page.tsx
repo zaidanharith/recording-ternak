@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  RecordingConditionBadge,
+  RecordingSoldBadge,
   RecordingSourceBadge,
   RecordingStatusBadge,
 } from "@/features/recordings/components/recording-badges";
@@ -30,6 +32,7 @@ import { RecordingFormDialog } from "@/features/recordings/components/recording-
 import { useAsync } from "@/hooks/use-async";
 import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
+import { formatDateId } from "@/lib/format-date";
 import { deleteRecording, listRecordings } from "@/services/recording.service";
 import { useAuthStore } from "@/stores/auth.store";
 import type { RecordingStatus } from "@/types/recording";
@@ -147,7 +150,9 @@ function RecordingPageContent() {
                 >
                   Tanggal Lahir
                 </SortableTableHead>
+                <TableHead>Kondisi</TableHead>
                 <TableHead>Anak (J/B)</TableHead>
+                <TableHead>Terjual</TableHead>
                 <SortableTableHead
                   sortKey="source"
                   currentKey={sortKey}
@@ -187,9 +192,15 @@ function RecordingPageContent() {
                     {recording.goat?.earTagNumber}
                   </TableCell>
                   <TableCell>{recording.goat?.farmer?.name}</TableCell>
-                  <TableCell>{recording.birthDate}</TableCell>
+                  <TableCell>{formatDateId(recording.birthDate)}</TableCell>
+                  <TableCell>
+                    <RecordingConditionBadge condition={recording.condition} />
+                  </TableCell>
                   <TableCell>
                     {recording.maleKidCount} / {recording.femaleKidCount}
+                  </TableCell>
+                  <TableCell>
+                    <RecordingSoldBadge sold={recording.sold} />
                   </TableCell>
                   <TableCell>
                     <RecordingSourceBadge source={recording.source} />
@@ -204,14 +215,22 @@ function RecordingPageContent() {
                           recording={recording}
                           onSaved={() => refetch()}
                           trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Edit">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Edit"
+                            >
                               <FiEdit2 className="size-3.5" />
                             </Button>
                           }
                         />
                         <ConfirmDialog
                           trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Hapus">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Hapus"
+                            >
                               <FiTrash2 className="size-3.5 text-destructive" />
                             </Button>
                           }
