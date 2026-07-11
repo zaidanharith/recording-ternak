@@ -21,11 +21,11 @@ api.interceptors.response.use(
     if (
       typeof window !== "undefined" &&
       error.response?.status === 401 &&
-      !window.location.pathname.startsWith("/login")
+      window.location.pathname !== "/"
     ) {
       localStorage.removeItem("rt_token");
       localStorage.removeItem("rt_admin");
-      window.location.href = "/login";
+      window.location.href = "/";
     }
 
     return Promise.reject(error);
