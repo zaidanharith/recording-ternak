@@ -3,6 +3,14 @@ const cloudinaryService = require('../services/cloudinary.service');
 
 const RECORDING_STATUSES = ['PERLU_REVIEW', 'FINAL'];
 
+const RECORDING_VALIDATION_MESSAGES = [
+  'Tanggal tidak valid, gunakan format YYYY-MM-DD (contoh: 2026-07-11).',
+  'Status terjual harus "Ya" atau "Tidak".',
+  'Kondisi harus "Sehat" atau "Sakit".',
+];
+
+const isRecordingValidationError = (error) => RECORDING_VALIDATION_MESSAGES.includes(error.message);
+
 exports.listRecordings = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -52,8 +60,8 @@ exports.getRecording = async (req, res) => {
 exports.createRecording = async (req, res) => {
   try {
     const {
-      goatId, matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId,
+      goatId, matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
+      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId,
     } = req.body;
 
     if (!goatId) {
@@ -63,8 +71,8 @@ exports.createRecording = async (req, res) => {
     const recording = await recordingRepository.createManualRecording({
       goatId,
       senderName: req.user.name,
-      matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId,
+      matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
+      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId,
     });
 
     return res.status(201).json({
@@ -75,6 +83,9 @@ exports.createRecording = async (req, res) => {
   } catch (error) {
     if (error.code === 'P2003') {
       return res.status(400).json({ success: false, message: 'Kambing tidak ditemukan.' });
+    }
+    if (isRecordingValidationError(error)) {
+      return res.status(400).json({ success: false, message: error.message });
     }
     console.error('Create Recording Error:', error);
     return res.status(500).json({
@@ -88,8 +99,8 @@ exports.createRecording = async (req, res) => {
 exports.updateRecording = async (req, res) => {
   try {
     const {
-      matingDate, birthDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, notes, photoUrl, photoPublicId, status,
+      matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
+      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId, status,
     } = req.body;
 
     if (status && !RECORDING_STATUSES.includes(status)) {
@@ -100,13 +111,15 @@ exports.updateRecording = async (req, res) => {
     }
 
     const updateData = {};
-    if (matingDate !== undefined) updateData.matingDate = matingDate;
-    if (birthDate !== undefined) updateData.birthDate = birthDate;
+    if (matingDate !== undefined) updateData.matingDate = recordingRepository.parseRecordingDate(matingDate);
+    if (birthDate !== undefined) updateData.birthDate = recordingRepository.parseRecordingDate(birthDate);
+    if (recordingDate !== undefined) updateData.recordingDate = recordingRepository.parseRecordingDate(recordingDate) || new Date();
     if (maleKidCount !== undefined) updateData.maleKidCount = maleKidCount;
     if (femaleKidCount !== undefined) updateData.femaleKidCount = femaleKidCount;
     if (matingNumber !== undefined) updateData.matingNumber = matingNumber;
     if (saleTarget !== undefined) updateData.saleTarget = saleTarget;
-    if (sold !== undefined) updateData.sold = sold;
+    if (sold !== undefined) updateData.sold = recordingRepository.parseSoldStatus(sold);
+    if (condition !== undefined) updateData.condition = recordingRepository.parseGoatCondition(condition);
     if (notes !== undefined) updateData.notes = notes;
     if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
     if (photoPublicId !== undefined) updateData.photoPublicId = photoPublicId;
@@ -138,6 +151,9 @@ exports.updateRecording = async (req, res) => {
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Recording tidak ditemukan.' });
+    }
+    if (isRecordingValidationError(error)) {
+      return res.status(400).json({ success: false, message: error.message });
     }
     console.error('Update Recording Error:', error);
     return res.status(500).json({

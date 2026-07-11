@@ -59,6 +59,19 @@ describe('updateRecording', () => {
     expect(recordingRepository.updateRecording).toHaveBeenCalledWith('r1', { status: 'FINAL' });
     expect(res.status).toHaveBeenCalledWith(200);
   });
+
+  it('rejects an invalid sold value', async () => {
+    recordingRepository.parseSoldStatus.mockImplementation(() => {
+      throw new Error('Status terjual harus "Ya" atau "Tidak".');
+    });
+    const req = { params: { id: 'r1' }, body: { sold: 'entahlah' } };
+    const res = buildRes();
+
+    await updateRecording(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(recordingRepository.updateRecording).not.toHaveBeenCalled();
+  });
 });
 
 describe('listRecordings', () => {
@@ -135,5 +148,19 @@ describe('deleteRecording', () => {
     await deleteRecording(req, res);
 
     expect(cloudinaryService.deleteImage).not.toHaveBeenCalled();
+  });
+});
+
+describe('createRecording validation', () => {
+  it('returns 400 when the condition value is invalid', async () => {
+    recordingRepository.createManualRecording.mockRejectedValue(
+      new Error('Kondisi harus "Sehat" atau "Sakit".')
+    );
+    const req = { body: { goatId: 'g1', condition: 'lumayan' }, user: { name: 'Admin Satu' } };
+    const res = buildRes();
+
+    await createRecording(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
   });
 });
