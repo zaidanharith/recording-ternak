@@ -68,6 +68,13 @@ const isKonfirmasiTidak = (text) => KONFIRMASI_NEGATIF.test(text.trim());
 
 // ─── Format pesan konfirmasi ringkasan ───────────────────────────────────────
 
+const formatDateForMessage = (isoDate) => {
+  if (!isoDate || isoDate === '-') return '-';
+  const [year, month, day] = isoDate.split('-');
+  if (!year || !month || !day) return isoDate;
+  return `${day}/${month}/${year}`;
+};
+
 const buildKonfirmasiMessage = (parsed, nomorTelinga, namaPeternak) => {
   const j = (val) => (val && val !== '-' ? val : '-');
   return [
@@ -75,10 +82,11 @@ const buildKonfirmasiMessage = (parsed, nomorTelinga, namaPeternak) => {
     '',
     `👤 Peternak: ${j(namaPeternak)}`,
     `🏷️ No. Telinga: ${j(nomorTelinga)}`,
-    `💑 Tanggal Kawin: ${j(parsed.tanggal_kawin)}`,
-    `🐣 Tanggal Beranak: ${j(parsed.tanggal_beranak)}`,
+    `💑 Tanggal Kawin: ${formatDateForMessage(parsed.tanggal_kawin)}`,
+    `🐣 Tanggal Beranak: ${formatDateForMessage(parsed.tanggal_beranak)}`,
     `♂️ Anak Jantan: ${j(parsed.jumlah_anak_jantan)}  |  ♀️ Anak Betina: ${j(parsed.jumlah_anak_betina)}`,
     `🔢 Perkawinan Ke: ${j(parsed.perkawinan_ke)}`,
+    `🏥 Kondisi: ${j(parsed.kondisi)}`,
     `🎯 Target Jual: ${j(parsed.target_penjualan)}`,
     `💰 Terjual: ${j(parsed.terjual)}`,
     parsed.catatan && parsed.catatan !== '-' ? `📝 Catatan: ${parsed.catatan}` : null,
@@ -119,6 +127,7 @@ const saveReport = async (pendingData, peternak) => {
     perkawinan_ke: parsed.perkawinan_ke,
     target_penjualan: parsed.target_penjualan,
     terjual: parsed.terjual,
+    kondisi: parsed.kondisi,
     catatan: parsed.catatan,
     photoUrl: photo?.url,
     photoPublicId: photo?.publicId,
@@ -134,13 +143,14 @@ const saveReport = async (pendingData, peternak) => {
       timestamp,
       nomor_telinga: nomorTelinga,
       nama_peternak: peternak.name,
-      tanggal_kawin: parsed.tanggal_kawin,
-      tanggal_beranak: parsed.tanggal_beranak,
+      tanggal_kawin: formatDateForMessage(parsed.tanggal_kawin),
+      tanggal_beranak: formatDateForMessage(parsed.tanggal_beranak),
       jumlah_anak_jantan: parsed.jumlah_anak_jantan,
       jumlah_anak_betina: parsed.jumlah_anak_betina,
       perkawinan_ke: parsed.perkawinan_ke,
       target_penjualan: parsed.target_penjualan,
       terjual: parsed.terjual,
+      kondisi: parsed.kondisi,
       catatan: parsed.catatan,
     }),
     // Sheet Kambing: upsert agar tidak duplikat
