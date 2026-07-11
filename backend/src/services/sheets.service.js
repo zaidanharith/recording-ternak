@@ -173,14 +173,23 @@ const syncAllFromDB = async (allPeternak) => {
     whatsapp_phone: (p) => p.whatsappPhone,
   };
 
+  const formatDateForSheet = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+  };
+
+  const SOLD_LABELS = { YA: 'Ya', TIDAK: 'Tidak' };
+  const CONDITION_LABELS = { SEHAT: 'Sehat', SAKIT: 'Sakit' };
+
   const recordingFieldMap = {
-    tanggal_kawin: (r) => r.matingDate,
-    tanggal_beranak: (r) => r.birthDate,
+    tanggal_kawin: (r) => formatDateForSheet(r.matingDate),
+    tanggal_beranak: (r) => formatDateForSheet(r.birthDate),
     jumlah_anak_jantan: (r) => r.maleKidCount,
     jumlah_anak_betina: (r) => r.femaleKidCount,
     perkawinan_ke: (r) => r.matingNumber,
     target_penjualan: (r) => r.saleTarget,
-    terjual: (r) => r.sold,
+    terjual: (r) => SOLD_LABELS[r.sold] ?? '-',
+    kondisi: (r) => CONDITION_LABELS[r.condition] ?? '-',
     catatan: (r) => r.notes,
   };
 
