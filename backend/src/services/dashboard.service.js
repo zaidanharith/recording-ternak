@@ -54,7 +54,7 @@ const getCharts = async () => {
     totalMaleKids += toNumberSafe(recording.maleKidCount);
     totalFemaleKids += toNumberSafe(recording.femaleKidCount);
 
-    const isSold = /ya/i.test(recording.sold || '');
+    const isSold = recording.sold === 'YA';
     const hasTarget = recording.saleTarget && recording.saleTarget !== '-';
 
     if (isSold) soldCount += 1;

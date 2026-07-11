@@ -35,8 +35,8 @@ describe('getSummary', () => {
 describe('getCharts', () => {
   it('aggregates recording trend and kid counts by gender', async () => {
     prisma.recording.findMany.mockResolvedValue([
-      { createdAt: new Date('2026-07-01T00:00:00Z'), maleKidCount: '2', femaleKidCount: '1', sold: 'Ya', saleTarget: '-' },
-      { createdAt: new Date('2026-07-01T00:00:00Z'), maleKidCount: '-', femaleKidCount: '3', sold: 'Belum', saleTarget: '10 Juli' },
+      { createdAt: new Date('2026-07-01T00:00:00Z'), maleKidCount: '2', femaleKidCount: '1', sold: 'YA', saleTarget: '-' },
+      { createdAt: new Date('2026-07-01T00:00:00Z'), maleKidCount: '-', femaleKidCount: '3', sold: 'TIDAK', saleTarget: '10 Juli' },
     ]);
 
     const charts = await getCharts();
