@@ -42,18 +42,34 @@ enum RecordingSource {
   MANUAL
 }
 
+enum SoldStatus {
+  YA
+  TIDAK
+
+  @@map("sold_status")
+}
+
+enum GoatCondition {
+  SEHAT
+  SAKIT
+
+  @@map("goat_condition")
+}
+
 model Recording {
   id             String          @id @default(uuid())
   goatId         String          @map("goat_id")
   goat           Goat            @relation(fields: [goatId], references: [id], onDelete: Cascade)
   senderName     String          @map("sender_name")
-  matingDate     String          @default("-") @map("mating_date")
-  birthDate      String          @default("-") @map("birth_date")
+  matingDate     DateTime?       @map("mating_date") @db.Date
+  birthDate      DateTime?       @map("birth_date") @db.Date
+  recordingDate  DateTime        @map("recording_date") @db.Date
   maleKidCount   String          @default("-") @map("male_kid_count")
   femaleKidCount String          @default("-") @map("female_kid_count")
   matingNumber   String          @default("-") @map("mating_number")
   saleTarget     String          @default("-") @map("sale_target")
-  sold           String          @default("-")
+  sold           SoldStatus?
+  condition      GoatCondition?
   notes          String          @default("-")
   status         RecordingStatus @default(PERLU_REVIEW)
   source         RecordingSource @default(WA)
