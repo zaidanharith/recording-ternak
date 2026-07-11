@@ -9,6 +9,7 @@ import { isAxiosError } from "axios";
 import { FiPlus } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -36,21 +39,27 @@ import {
 } from "@/components/ui/form";
 import { GoatSelect } from "@/features/recordings/components/goat-select";
 import { PhotoUploadField } from "@/features/recordings/components/photo-upload-field";
-import {
-  createRecording,
-  updateRecording,
-} from "@/services/recording.service";
-import type { Recording, RecordingStatus } from "@/types/recording";
+import { createRecording, updateRecording } from "@/services/recording.service";
+import type {
+  GoatCondition,
+  Recording,
+  RecordingStatus,
+  SoldStatus,
+} from "@/types/recording";
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const recordingSchema = z.object({
   goatId: z.string().min(1, "Kambing wajib dipilih"),
   matingDate: z.string().optional(),
   birthDate: z.string().optional(),
+  recordingDate: z.string().min(1, "Tanggal recording wajib diisi"),
   maleKidCount: z.string().optional(),
   femaleKidCount: z.string().optional(),
   matingNumber: z.string().optional(),
   saleTarget: z.string().optional(),
-  sold: z.string().optional(),
+  sold: z.enum(["YA", "TIDAK"]).optional(),
+  condition: z.enum(["SEHAT", "SAKIT"]).optional(),
   notes: z.string().optional(),
   status: z.enum(["PERLU_REVIEW", "FINAL"]).optional(),
 });
@@ -72,29 +81,44 @@ export function RecordingFormDialog({
 }: RecordingFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(recording?.photoUrl ?? "");
-  const [photoPublicId, setPhotoPublicId] = useState(recording?.photoPublicId ?? "");
+  const [photoPublicId, setPhotoPublicId] = useState(
+    recording?.photoPublicId ?? "",
+  );
+  const [useToday, setUseToday] = useState(
+    !recording || recording.recordingDate.slice(0, 10) === todayIso(),
+  );
   const isEdit = !!recording;
 
   const form = useForm<RecordingValues>({
     resolver: zodResolver(recordingSchema),
     defaultValues: {
       goatId: recording?.goatId ?? defaultGoatId ?? "",
-      matingDate: recording?.matingDate ?? "",
-      birthDate: recording?.birthDate ?? "",
+      matingDate: recording?.matingDate?.slice(0, 10) ?? "",
+      birthDate: recording?.birthDate?.slice(0, 10) ?? "",
+      recordingDate: recording?.recordingDate?.slice(0, 10) ?? todayIso(),
       maleKidCount: recording?.maleKidCount ?? "",
       femaleKidCount: recording?.femaleKidCount ?? "",
       matingNumber: recording?.matingNumber ?? "",
       saleTarget: recording?.saleTarget ?? "",
-      sold: recording?.sold ?? "",
+      sold: recording?.sold ?? undefined,
+      condition: recording?.condition ?? undefined,
       notes: recording?.notes ?? "",
       status: recording?.status,
     },
   });
 
+  const handleTodayToggle = (checked: boolean) => {
+    setUseToday(checked);
+    if (checked) {
+      form.setValue("recordingDate", todayIso(), { shouldValidate: true });
+    }
+  };
+
   const onSubmit = async (values: RecordingValues) => {
     try {
       const payload = {
         ...values,
+        recordingDate: useToday ? todayIso() : values.recordingDate,
         photoUrl: photoUrl || undefined,
         photoPublicId: photoPublicId || undefined,
       };
@@ -103,10 +127,15 @@ export function RecordingFormDialog({
         ? await updateRecording(recording.id, payload)
         : await createRecording(payload);
 
-      toast.success(isEdit ? "Recording berhasil diperbarui." : "Recording berhasil ditambahkan.");
+      toast.success(
+        isEdit
+          ? "Recording berhasil diperbarui."
+          : "Recording berhasil ditambahkan.",
+      );
       onSaved(saved);
       setOpen(false);
       form.reset();
+      setUseToday(!recording);
     } catch (error) {
       const message =
         isAxiosError(error) && error.response?.data?.message
@@ -135,7 +164,10 @@ export function RecordingFormDialog({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <FormField
               control={form.control}
               name="goatId"
@@ -154,6 +186,30 @@ export function RecordingFormDialog({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="recordingDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tanggal Recording</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} disabled={useToday} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="use-today"
+                checked={useToday}
+                onCheckedChange={(checked) => handleTodayToggle(checked === true)}
+              />
+              <Label htmlFor="use-today" className="text-xs font-normal text-muted-foreground">
+                Hari ini
+              </Label>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -162,7 +218,7 @@ export function RecordingFormDialog({
                   <FormItem>
                     <FormLabel>Tanggal Kawin</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,7 +231,7 @@ export function RecordingFormDialog({
                   <FormItem>
                     <FormLabel>Tanggal Lahir</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,12 +291,53 @@ export function RecordingFormDialog({
               />
               <FormField
                 control={form.control}
+                name="condition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kondisi</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) =>
+                          field.onChange(value as GoatCondition)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Pilih kondisi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SEHAT">Sehat</SelectItem>
+                          <SelectItem value="SAKIT">Sakit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="sold"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status Terjual</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ya / Belum" {...field} />
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={(value) =>
+                          field.onChange(value as SoldStatus)
+                        }
+                        className="flex flex-row gap-4 pt-1"
+                      >
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="YA" />
+                          Ya
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value="TIDAK" />
+                          Tidak
+                        </label>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -280,7 +377,9 @@ export function RecordingFormDialog({
                           <SelectValue placeholder="Pilih status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="PERLU_REVIEW">Perlu Review</SelectItem>
+                          <SelectItem value="PERLU_REVIEW">
+                            Perlu Review
+                          </SelectItem>
                           <SelectItem value="FINAL">Final</SelectItem>
                         </SelectContent>
                       </Select>
