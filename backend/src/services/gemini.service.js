@@ -49,7 +49,7 @@ Aturan:
 2. Bukan laporan kambing (salam, pertanyaan, obrolan) → { "bukan_laporan_ternak": true }
 3. Jangan mengarang informasi
 4. "timestamp" dan "pengirim" JANGAN diisi, diurus sistem
-5. TANGGAL: Normalisasi SEMUA tanggal ke format DD/MM/YYYY. Gunakan konteks hari ini untuk menentukan tahun/bulan yang dimaksud (misal "kemarin", "12 februari", "minggu lalu"). Jika tahun tidak disebutkan, gunakan tahun saat ini. Jika tidak dapat ditentukan sama sekali, isi "-".`;
+5. TANGGAL: Normalisasi SEMUA tanggal ke format ISO YYYY-MM-DD. Gunakan konteks hari ini untuk menentukan tahun/bulan yang dimaksud (misal "kemarin", "12 februari", "minggu lalu"). Jika tahun tidak disebutkan, gunakan tahun saat ini. Jika tidak dapat ditentukan sama sekali, isi "-".`;
 
   const result = await callWithRetry(() => parserModel.generateContent(prompt));
   const rawText = result.response.text().trim();
@@ -86,7 +86,7 @@ Jika A, kembalikan JSON: { "intent": "REVISI", ...field data laporan seperti bia
 Jika B, kembalikan: { "intent": "PEMBATALAN" }
 Jika C, kembalikan: { "intent": "PERTANYAAN" }
 
-TANGGAL: Normalisasi ke format DD/MM/YYYY. Gunakan tahun saat ini jika tidak disebutkan.
+TANGGAL: Normalisasi ke format ISO YYYY-MM-DD. Gunakan tahun saat ini jika tidak disebutkan.
 Kembalikan HANYA JSON (tanpa markdown).`;
 
   const result = await callWithRetry(() => parserModel.generateContent(prompt));
