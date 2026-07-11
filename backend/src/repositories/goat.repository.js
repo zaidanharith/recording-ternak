@@ -1,18 +1,29 @@
 const prisma = require('../lib/prisma');
 
 /**
+ * Nomor telinga disimpan sebagai Int di database, tapi bisa masuk sebagai
+ * string dari form admin maupun alur WhatsApp — validasi & konversi di sini.
+ */
+const parseEarTagNumber = (value) => {
+  const trimmed = typeof value === 'string' ? value.trim() : value;
+  const parsed = Number(trimmed);
+
+  if (trimmed === '' || trimmed === null || trimmed === undefined || !Number.isInteger(parsed)) {
+    throw new Error('Nomor telinga harus berupa angka bulat');
+  }
+
+  return parsed;
+};
+
+/**
  * Cari kambing berdasarkan nomor telinga.
  * Jika belum ada, buat kambing baru dengan relasi ke peternak.
  */
 const findOrCreateGoat = async (earTagNumber, farmerId) => {
-  const cleanNomor = (earTagNumber || '').trim();
-
-  if (!cleanNomor || cleanNomor === '-') {
-    throw new Error('Nomor telinga tidak boleh kosong');
-  }
+  const parsedEarTagNumber = parseEarTagNumber(earTagNumber);
 
   const existing = await prisma.goat.findUnique({
-    where: { earTagNumber: cleanNomor },
+    where: { earTagNumber: parsedEarTagNumber },
     include: { farmer: true },
   });
 
@@ -20,7 +31,7 @@ const findOrCreateGoat = async (earTagNumber, farmerId) => {
 
   return await prisma.goat.create({
     data: {
-      earTagNumber: cleanNomor,
+      earTagNumber: parsedEarTagNumber,
       farmerId,
     },
     include: { farmer: true },
@@ -42,7 +53,7 @@ const getGoatsByFarmerId = async (farmerId) => {
  */
 const getGoatByEarTagNumber = async (earTagNumber) => {
   return await prisma.goat.findUnique({
-    where: { earTagNumber: earTagNumber.trim() },
+    where: { earTagNumber: parseEarTagNumber(earTagNumber) },
     include: { farmer: true },
   });
 };
@@ -73,7 +84,7 @@ const findGoatById = async (id) => {
 
 const createGoat = async ({ earTagNumber, farmerId }) => {
   return await prisma.goat.create({
-    data: { earTagNumber: earTagNumber.trim(), farmerId },
+    data: { earTagNumber: parseEarTagNumber(earTagNumber), farmerId },
     include: { farmer: true },
   });
 };
@@ -88,11 +99,8 @@ const deleteGoat = async (id) => {
 
 const getNextEarTagNumber = async () => {
   const goats = await prisma.goat.findMany({ select: { earTagNumber: true } });
-  const maxNumber = goats.reduce((max, goat) => {
-    const parsed = parseInt(goat.earTagNumber, 10);
-    return Number.isFinite(parsed) && parsed > max ? parsed : max;
-  }, 0);
-  return String(maxNumber + 1);
+  const maxNumber = goats.reduce((max, goat) => Math.max(max, goat.earTagNumber), 0);
+  return maxNumber + 1;
 };
 
 const listGoatsWithoutRecentRecording = async (days) => {
@@ -105,6 +113,7 @@ const listGoatsWithoutRecentRecording = async (days) => {
 };
 
 module.exports = {
+  parseEarTagNumber,
   findOrCreateGoat,
   getGoatsByFarmerId,
   getGoatByEarTagNumber,

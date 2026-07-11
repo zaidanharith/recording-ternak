@@ -6,13 +6,13 @@ Base path: `/api/goats`. All endpoints require auth; write endpoints require `AD
 
 Query params: `page`, `limit`, `farmerId` (filter to one farmer's goats). Each goat includes its `farmer`.
 
-Response `200`: `{ "success": true, "data": { "goats": [ { "id": "…", "earTagNumber": "12", "farmerId": "…", "farmer": { … } } ], "meta": { "page": 1, "limit": 20, "total": 30 } } }`
+Response `200`: `{ "success": true, "data": { "goats": [ { "id": "…", "earTagNumber": 12, "farmerId": "…", "farmer": { … } } ], "meta": { "page": 1, "limit": 20, "total": 30 } } }`
 
 ## `GET /api/goats/next-ear-tag`
 
-Returns the next unused sequential ear tag number, computed as `max(existing numeric earTagNumber) + 1`. Used by the dashboard's "Add Goat" form to prefill a suggestion.
+Returns the next unused sequential ear tag number, computed as `max(existing earTagNumber) + 1`. Used by the dashboard's "Add Goat" form to prefill a suggestion.
 
-Response `200`: `{ "success": true, "data": { "nextEarTagNumber": "31" } }`
+Response `200`: `{ "success": true, "data": { "nextEarTagNumber": 31 } }`
 
 > Route order note: this is registered before `/:id` in `goat.route.js` so `"next-ear-tag"` is never matched as an `:id` path param.
 
@@ -22,7 +22,7 @@ Includes `farmer` and all `recordings` (newest first). `404` if not found.
 
 ## `POST /api/goats`
 
-Request: `{ "earTagNumber": "31", "farmerId": "…" }`, both required.
+Request: `{ "earTagNumber": 31, "farmerId": "…" }`, both required. `earTagNumber` must be an integer (`400` otherwise).
 
 Errors: `400` missing fields or `farmerId` doesn't exist (Prisma `P2003`), `409` if `earTagNumber` already used.
 

@@ -3,7 +3,7 @@ import type { Recording } from "@/types/recording";
 
 export interface Goat {
   id: string;
-  earTagNumber: string;
+  earTagNumber: number;
   farmerId: string;
   createdAt: string;
   updatedAt: string;
@@ -12,12 +12,12 @@ export interface Goat {
 }
 
 export interface CreateGoatInput {
-  earTagNumber: string;
+  earTagNumber: number;
   farmerId: string;
 }
 
 export interface UpdateGoatInput {
-  earTagNumber?: string;
+  earTagNumber?: number;
   farmerId?: string;
 }
 

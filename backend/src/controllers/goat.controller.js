@@ -78,6 +78,9 @@ exports.createGoat = async (req, res) => {
     if (error.code === 'P2003') {
       return res.status(400).json({ success: false, message: 'Peternak tidak ditemukan.' });
     }
+    if (error.message === 'Nomor telinga harus berupa angka bulat') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     console.error('Create Goat Error:', error);
     return res.status(500).json({
       success: false,
@@ -91,7 +94,7 @@ exports.updateGoat = async (req, res) => {
   try {
     const { earTagNumber, farmerId } = req.body;
     const updateData = {};
-    if (earTagNumber) updateData.earTagNumber = earTagNumber;
+    if (earTagNumber) updateData.earTagNumber = goatRepository.parseEarTagNumber(earTagNumber);
     if (farmerId) updateData.farmerId = farmerId;
 
     if (Object.keys(updateData).length === 0) {
@@ -111,6 +114,9 @@ exports.updateGoat = async (req, res) => {
     }
     if (error.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Kambing tidak ditemukan.' });
+    }
+    if (error.message === 'Nomor telinga harus berupa angka bulat') {
+      return res.status(400).json({ success: false, message: error.message });
     }
     console.error('Update Goat Error:', error);
     return res.status(500).json({

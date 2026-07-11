@@ -22,7 +22,7 @@ model Farmer {
 
 model Goat {
   id           String      @id @default(uuid())
-  earTagNumber String      @unique @map("ear_tag_number")
+  earTagNumber Int         @unique @map("ear_tag_number")
   farmerId     String      @map("farmer_id")
   farmer       Farmer      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   createdAt    DateTime    @default(now())

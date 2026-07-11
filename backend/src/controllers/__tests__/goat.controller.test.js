@@ -43,14 +43,14 @@ describe('createGoat', () => {
 
 describe('getNextEarTagNumber', () => {
   it('returns the next suggested ear tag number', async () => {
-    goatRepository.getNextEarTagNumber.mockResolvedValue('13');
+    goatRepository.getNextEarTagNumber.mockResolvedValue(13);
     const req = {};
     const res = buildRes();
 
     await getNextEarTagNumber(req, res);
 
     const jsonArg = res.json.mock.calls[0][0];
-    expect(jsonArg.data.nextEarTagNumber).toBe('13');
+    expect(jsonArg.data.nextEarTagNumber).toBe(13);
   });
 });
 

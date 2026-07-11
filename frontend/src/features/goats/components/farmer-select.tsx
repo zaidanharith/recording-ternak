@@ -11,11 +11,16 @@ import {
 } from "@/components/ui/select";
 import { useAsync } from "@/hooks/use-async";
 import { listFarmers } from "@/services/farmer.service";
+import type { Farmer } from "@/types/farmer";
 
 interface FarmerSelectProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+}
+
+function farmerLabel(farmer: Farmer) {
+  return `${farmer.name} — ${farmer.whatsappPhone}`;
 }
 
 export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
@@ -24,6 +29,7 @@ export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
     [],
   );
   const { data, isLoading } = useAsync(fetcher);
+  const placeholder = isLoading ? "Memuat..." : "Pilih peternak";
 
   return (
     <Select
@@ -32,12 +38,17 @@ export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
       disabled={disabled || isLoading}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder={isLoading ? "Memuat..." : "Pilih peternak"} />
+        <SelectValue placeholder={placeholder}>
+          {(current: string | null) => {
+            const farmer = data?.farmers.find((item) => item.id === current);
+            return farmer ? farmerLabel(farmer) : placeholder;
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {data?.farmers.map((farmer) => (
           <SelectItem key={farmer.id} value={farmer.id}>
-            {farmer.name} — {farmer.whatsappPhone}
+            {farmerLabel(farmer)}
           </SelectItem>
         ))}
       </SelectContent>

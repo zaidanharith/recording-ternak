@@ -32,7 +32,7 @@ erDiagram
 
     GOAT {
         string id PK
-        string earTagNumber UK
+        int earTagNumber UK
         string farmerId FK
         datetime createdAt
         datetime updatedAt

@@ -33,7 +33,10 @@ import { createGoat, getNextEarTagNumber, updateGoat } from "@/services/goat.ser
 import type { Goat } from "@/types/goat";
 
 const goatSchema = z.object({
-  earTagNumber: z.string().min(1, "Nomor telinga wajib diisi"),
+  earTagNumber: z
+    .string()
+    .min(1, "Nomor telinga wajib diisi")
+    .regex(/^\d+$/, "Nomor telinga harus berupa angka bulat"),
   farmerId: z.string().min(1, "Peternak wajib dipilih"),
 });
 
@@ -59,7 +62,7 @@ export function GoatFormDialog({
   const form = useForm<GoatValues>({
     resolver: zodResolver(goatSchema),
     defaultValues: {
-      earTagNumber: goat?.earTagNumber ?? "",
+      earTagNumber: goat ? String(goat.earTagNumber) : "",
       farmerId: goat?.farmerId ?? defaultFarmerId ?? "",
     },
   });
@@ -69,7 +72,7 @@ export function GoatFormDialog({
     if (checked) {
       try {
         const next = await getNextEarTagNumber();
-        form.setValue("earTagNumber", next, { shouldValidate: true });
+        form.setValue("earTagNumber", String(next), { shouldValidate: true });
       } catch {
         toast.error("Gagal mengambil nomor telinga otomatis.");
         setAutoNumber(false);
@@ -79,9 +82,10 @@ export function GoatFormDialog({
 
   const onSubmit = async (values: GoatValues) => {
     try {
+      const input = { ...values, earTagNumber: Number(values.earTagNumber) };
       const saved = isEdit
-        ? await updateGoat(goat.id, values)
-        : await createGoat(values);
+        ? await updateGoat(goat.id, input)
+        : await createGoat(input);
       toast.success(isEdit ? "Kambing berhasil diperbarui." : "Kambing berhasil ditambahkan.");
       onSaved(saved);
       setOpen(false);
@@ -121,7 +125,7 @@ export function GoatFormDialog({
                 <FormItem>
                   <FormLabel>Nomor Telinga</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={autoNumber} />
+                    <Input inputMode="numeric" {...field} disabled={autoNumber} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

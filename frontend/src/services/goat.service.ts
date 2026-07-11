@@ -22,8 +22,8 @@ export async function getGoat(id: string): Promise<Goat> {
   return data.data!.goat;
 }
 
-export async function getNextEarTagNumber(): Promise<string> {
-  const { data } = await api.get<ApiResponse<{ nextEarTagNumber: string }>>(
+export async function getNextEarTagNumber(): Promise<number> {
+  const { data } = await api.get<ApiResponse<{ nextEarTagNumber: number }>>(
     "/goats/next-ear-tag",
   );
   return data.data!.nextEarTagNumber;

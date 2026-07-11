@@ -23,7 +23,7 @@ export interface DashboardCharts {
 
 export interface DashboardAlert {
   goatId: string;
-  earTagNumber: string;
+  earTagNumber: number;
   farmerId: string;
   farmerName: string;
 }

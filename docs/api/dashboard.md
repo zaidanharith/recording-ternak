@@ -50,4 +50,4 @@ Response `200`:
 
 Goats with no recording in the last 30 days.
 
-Response `200`: `{ "success": true, "data": { "alerts": [ { "goatId": "…", "earTagNumber": "12", "farmerId": "…", "farmerName": "Budi" } ] } }`
+Response `200`: `{ "success": true, "data": { "alerts": [ { "goatId": "…", "earTagNumber": 12, "farmerId": "…", "farmerName": "Budi" } ] } }`
