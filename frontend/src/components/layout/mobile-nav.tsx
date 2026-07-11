@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { LogoutConfirmDialog } from "@/components/layout/logout-confirm-dialog";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { useLogout } from "@/hooks/use-logout";
 import { useAuthStore } from "@/stores/auth.store";
@@ -59,18 +60,18 @@ export function MobileNav() {
               </Avatar>
               <span className="truncate text-sm font-medium">{admin.name}</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="justify-start"
-              onClick={() => {
+            <LogoutConfirmDialog
+              onConfirm={() => {
                 setOpen(false);
                 handleLogout();
               }}
-            >
-              <FiLogOut className="size-4" />
-              Keluar
-            </Button>
+              trigger={
+                <Button variant="destructive" size="sm" className="justify-start">
+                  <FiLogOut className="size-4" />
+                  Keluar
+                </Button>
+              }
+            />
           </div>
         )}
       </SheetContent>

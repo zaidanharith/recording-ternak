@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiLogOut, FiSettings, FiUser } from "react-icons/fi";
 
@@ -13,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LogoutConfirmDialog } from "@/components/layout/logout-confirm-dialog";
 import { useLogout } from "@/hooks/use-logout";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -29,46 +31,54 @@ export function UserMenu() {
   const router = useRouter();
   const admin = useAuthStore((state) => state.admin);
   const handleLogout = useLogout();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   if (!admin) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" className="h-9 gap-2 px-2">
-            <Avatar className="size-7">
-              <AvatarImage src={admin.avatarUrl ?? undefined} alt={admin.name} />
-              <AvatarFallback>{initials(admin.name)}</AvatarFallback>
-            </Avatar>
-            <span className="hidden text-sm font-medium sm:inline">
-              {admin.name}
-            </span>
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex flex-col">
-          <span className="text-sm font-medium">{admin.name}</span>
-          <span className="text-xs text-muted-foreground">{admin.email}</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/pengaturan")}>
-          <FiUser className="size-4" />
-          Profil Saya
-        </DropdownMenuItem>
-        {admin.role === "SUPERADMIN" && (
-          <DropdownMenuItem onClick={() => router.push("/pengaturan/akun")}>
-            <FiSettings className="size-4" />
-            Kelola Akun
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" className="h-9 gap-2 px-2">
+              <Avatar className="size-7">
+                <AvatarImage src={admin.avatarUrl ?? undefined} alt={admin.name} />
+                <AvatarFallback>{initials(admin.name)}</AvatarFallback>
+              </Avatar>
+              <span className="hidden text-sm font-medium sm:inline">
+                {admin.name}
+              </span>
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="flex flex-col">
+            <span className="text-sm font-medium">{admin.name}</span>
+            <span className="text-xs text-muted-foreground">{admin.email}</span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => router.push("/pengaturan")}>
+            <FiUser className="size-4" />
+            Profil Saya
           </DropdownMenuItem>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-          <FiLogOut className="size-4" />
-          Keluar
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {admin.role === "SUPERADMIN" && (
+            <DropdownMenuItem onClick={() => router.push("/pengaturan/akun")}>
+              <FiSettings className="size-4" />
+              Kelola Akun
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={() => setLogoutOpen(true)}>
+            <FiLogOut className="size-4" />
+            Keluar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <LogoutConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        onConfirm={handleLogout}
+      />
+    </>
   );
 }

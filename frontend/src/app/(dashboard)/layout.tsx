@@ -11,7 +11,7 @@ export default function DashboardLayout({
     <RouteGuard>
       <div className="flex min-h-screen">
         <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col md:pl-60">
           <DashboardHeader />
           <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>

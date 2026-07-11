@@ -4,6 +4,7 @@ import { FiLogOut } from "react-icons/fi";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { LogoutConfirmDialog } from "@/components/layout/logout-confirm-dialog";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { useLogout } from "@/hooks/use-logout";
 import { useAuthStore } from "@/stores/auth.store";
@@ -22,7 +23,7 @@ export function AppSidebar() {
   const handleLogout = useLogout();
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-border bg-sidebar p-4 md:flex md:flex-col">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar p-4 md:flex">
       <div className="mb-6 px-2">
         <span className="text-lg font-semibold text-sidebar-foreground">
           Recording Ternak
@@ -44,15 +45,15 @@ export function AppSidebar() {
               {admin.name}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-start"
-            onClick={handleLogout}
-          >
-            <FiLogOut className="size-4" />
-            Keluar
-          </Button>
+          <LogoutConfirmDialog
+            onConfirm={handleLogout}
+            trigger={
+              <Button variant="destructive" size="sm" className="justify-start">
+                <FiLogOut className="size-4" />
+                Keluar
+              </Button>
+            }
+          />
         </div>
       )}
     </aside>
