@@ -69,3 +69,65 @@ describe('createRecording', () => {
     });
   });
 });
+
+describe('parseRecordingDate', () => {
+  const { parseRecordingDate } = require('../recording.repository');
+
+  it('returns null for "-", empty string, and undefined', () => {
+    expect(parseRecordingDate('-')).toBeNull();
+    expect(parseRecordingDate('')).toBeNull();
+    expect(parseRecordingDate(undefined)).toBeNull();
+  });
+
+  it('parses a valid ISO date string into a Date', () => {
+    const result = parseRecordingDate('2026-07-11');
+    expect(result).toBeInstanceOf(Date);
+    expect(result.toISOString().slice(0, 10)).toBe('2026-07-11');
+  });
+
+  it('throws on an unparseable date string', () => {
+    expect(() => parseRecordingDate('bukan tanggal')).toThrow('Tanggal tidak valid, gunakan format YYYY-MM-DD (contoh: 2026-07-11).');
+  });
+});
+
+describe('parseSoldStatus', () => {
+  const { parseSoldStatus } = require('../recording.repository');
+
+  it('returns null for "-", empty string, and undefined', () => {
+    expect(parseSoldStatus('-')).toBeNull();
+    expect(parseSoldStatus('')).toBeNull();
+    expect(parseSoldStatus(undefined)).toBeNull();
+  });
+
+  it('maps case-insensitive Ya/Tidak/Belum and the enum values themselves', () => {
+    expect(parseSoldStatus('Ya')).toBe('YA');
+    expect(parseSoldStatus('tidak')).toBe('TIDAK');
+    expect(parseSoldStatus('Belum')).toBe('TIDAK');
+    expect(parseSoldStatus('YA')).toBe('YA');
+    expect(parseSoldStatus('TIDAK')).toBe('TIDAK');
+  });
+
+  it('throws on an unrecognized value', () => {
+    expect(() => parseSoldStatus('2 ekor')).toThrow('Status terjual harus "Ya" atau "Tidak".');
+  });
+});
+
+describe('parseGoatCondition', () => {
+  const { parseGoatCondition } = require('../recording.repository');
+
+  it('returns null for "-", empty string, and undefined', () => {
+    expect(parseGoatCondition('-')).toBeNull();
+    expect(parseGoatCondition('')).toBeNull();
+    expect(parseGoatCondition(undefined)).toBeNull();
+  });
+
+  it('maps case-insensitive Sehat/Sakit and the enum values themselves', () => {
+    expect(parseGoatCondition('Sehat')).toBe('SEHAT');
+    expect(parseGoatCondition('sakit')).toBe('SAKIT');
+    expect(parseGoatCondition('SEHAT')).toBe('SEHAT');
+  });
+
+  it('throws on an unrecognized value', () => {
+    expect(() => parseGoatCondition('lumayan')).toThrow('Kondisi harus "Sehat" atau "Sakit".');
+  });
+});
