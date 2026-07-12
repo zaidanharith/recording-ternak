@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import type { ApiResponse, PaginationMeta } from "@/types/common";
 import type {
   CreateGoatInput,
+  ExportGoatsQuery,
   Goat,
   ListGoatsQuery,
   UpdateGoatInput,
@@ -50,4 +51,12 @@ export async function updateGoat(
 
 export async function deleteGoat(id: string): Promise<void> {
   await api.delete(`/goats/${id}`);
+}
+
+export async function exportGoats(query: ExportGoatsQuery): Promise<Blob> {
+  const { data } = await api.get("/goats/export", {
+    params: query,
+    responseType: "blob",
+  });
+  return data;
 }

@@ -27,3 +27,10 @@ export interface ListFarmersQuery {
   limit?: number;
   search?: string;
 }
+
+export interface ExportFarmersQuery {
+  format: "xlsx" | "pdf";
+  search?: string;
+  sortBy?: "name" | "whatsappPhone" | "address";
+  sortDir?: "asc" | "desc";
+}

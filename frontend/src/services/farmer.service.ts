@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/types/chat";
 import type { ApiResponse, PaginationMeta } from "@/types/common";
 import type {
   CreateFarmerInput,
+  ExportFarmersQuery,
   Farmer,
   ListFarmersQuery,
   UpdateFarmerInput,
@@ -60,4 +61,12 @@ export async function getFarmerChatMessages(
 export async function sendFarmerReminder(id: string): Promise<string> {
   const { data } = await api.post<ApiResponse<null>>(`/farmers/${id}/reminder`);
   return data.message ?? "";
+}
+
+export async function exportFarmers(query: ExportFarmersQuery): Promise<Blob> {
+  const { data } = await api.get("/farmers/export", {
+    params: query,
+    responseType: "blob",
+  });
+  return data;
 }

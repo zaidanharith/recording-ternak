@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import type { ApiResponse, PaginationMeta } from "@/types/common";
 import type {
   CreateRecordingInput,
+  ExportRecordingsQuery,
   ListRecordingsQuery,
   Recording,
   UpdateRecordingInput,
@@ -46,4 +47,14 @@ export async function updateRecording(
 
 export async function deleteRecording(id: string): Promise<void> {
   await api.delete(`/recordings/${id}`);
+}
+
+export async function exportRecordings(
+  query: ExportRecordingsQuery,
+): Promise<Blob> {
+  const { data } = await api.get("/recordings/export", {
+    params: query,
+    responseType: "blob",
+  });
+  return data;
 }

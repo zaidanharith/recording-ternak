@@ -66,3 +66,15 @@ export interface ListRecordingsQuery {
   goatId?: string;
   farmerId?: string;
 }
+
+export interface ExportRecordingsQuery {
+  format: "xlsx" | "pdf";
+  status?: RecordingStatus;
+  sold?: SoldStatus;
+  condition?: GoatCondition;
+  source?: RecordingSource;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: "goat" | "farmer" | "birthDate" | "source" | "status";
+  sortDir?: "asc" | "desc";
+}

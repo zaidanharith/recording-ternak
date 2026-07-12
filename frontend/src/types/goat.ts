@@ -26,3 +26,12 @@ export interface ListGoatsQuery {
   limit?: number;
   farmerId?: string;
 }
+
+export interface ExportGoatsQuery {
+  format: "xlsx" | "pdf";
+  farmerId?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: "earTagNumber" | "farmer" | "createdAt";
+  sortDir?: "asc" | "desc";
+}
