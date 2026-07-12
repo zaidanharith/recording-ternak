@@ -1,7 +1,20 @@
 const recordingRepository = require('../repositories/recording.repository');
 const cloudinaryService = require('../services/cloudinary.service');
+const exportService = require('../services/export.service');
 
 const RECORDING_STATUSES = ['PERLU_REVIEW', 'FINAL'];
+
+const EXPORT_FORMATS = ['xlsx', 'pdf'];
+const SOLD_STATUSES = ['YA', 'TIDAK'];
+const GOAT_CONDITIONS = ['SEHAT', 'SAKIT'];
+const RECORDING_SOURCES = ['WA', 'MANUAL'];
+const RECORDING_SORT_FIELDS = ['goat', 'farmer', 'birthDate', 'source', 'status'];
+const SORT_DIRECTIONS = ['asc', 'desc'];
+
+const SOLD_LABELS = { YA: 'Ya', TIDAK: 'Tidak' };
+const CONDITION_LABELS = { SEHAT: 'Sehat', SAKIT: 'Sakit' };
+const SOURCE_LABELS = { WA: 'WhatsApp', MANUAL: 'Manual' };
+const STATUS_LABELS = { PERLU_REVIEW: 'Perlu Review', FINAL: 'Final' };
 
 const RECORDING_VALIDATION_MESSAGES = [
   'Tanggal tidak valid, gunakan format YYYY-MM-DD (contoh: 2026-07-11).',
@@ -182,6 +195,79 @@ exports.deleteRecording = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan saat menghapus recording.',
+      error: error.message,
+    });
+  }
+};
+
+exports.exportRecordings = async (req, res) => {
+  try {
+    const { format, status, sold, condition, source, startDate, endDate } = req.query;
+    const sortBy = req.query.sortBy || 'birthDate';
+    const sortDir = req.query.sortDir || 'desc';
+
+    if (!EXPORT_FORMATS.includes(format)) {
+      return res.status(400).json({ success: false, message: `format harus salah satu dari: ${EXPORT_FORMATS.join(', ')}.` });
+    }
+    if (status && !RECORDING_STATUSES.includes(status)) {
+      return res.status(400).json({ success: false, message: `status harus salah satu dari: ${RECORDING_STATUSES.join(', ')}.` });
+    }
+    if (sold && !SOLD_STATUSES.includes(sold)) {
+      return res.status(400).json({ success: false, message: `sold harus salah satu dari: ${SOLD_STATUSES.join(', ')}.` });
+    }
+    if (condition && !GOAT_CONDITIONS.includes(condition)) {
+      return res.status(400).json({ success: false, message: `condition harus salah satu dari: ${GOAT_CONDITIONS.join(', ')}.` });
+    }
+    if (source && !RECORDING_SOURCES.includes(source)) {
+      return res.status(400).json({ success: false, message: `source harus salah satu dari: ${RECORDING_SOURCES.join(', ')}.` });
+    }
+    if (!RECORDING_SORT_FIELDS.includes(sortBy)) {
+      return res.status(400).json({ success: false, message: `sortBy harus salah satu dari: ${RECORDING_SORT_FIELDS.join(', ')}.` });
+    }
+    if (!SORT_DIRECTIONS.includes(sortDir)) {
+      return res.status(400).json({ success: false, message: `sortDir harus salah satu dari: ${SORT_DIRECTIONS.join(', ')}.` });
+    }
+
+    const recordings = await recordingRepository.exportRecordings({
+      status, sold, condition, source, startDate, endDate, sortBy, sortDir,
+    });
+
+    const columns = [
+      { header: 'No. Telinga Kambing', key: 'earTagNumber', width: 20 },
+      { header: 'Peternak', key: 'farmerName', width: 24 },
+      { header: 'Tanggal Lahir', key: 'birthDate', width: 16 },
+      { header: 'Kondisi', key: 'condition', width: 12 },
+      { header: 'Anak Jantan', key: 'maleKidCount', width: 12 },
+      { header: 'Anak Betina', key: 'femaleKidCount', width: 12 },
+      { header: 'Terjual', key: 'sold', width: 10 },
+      { header: 'Sumber', key: 'source', width: 12 },
+      { header: 'Status', key: 'status', width: 14 },
+    ];
+
+    const rows = recordings.map((recording) => ({
+      earTagNumber: recording.goat?.earTagNumber ?? '-',
+      farmerName: recording.goat?.farmer?.name ?? '-',
+      birthDate: exportService.formatDateId(recording.birthDate),
+      condition: recording.condition ? CONDITION_LABELS[recording.condition] : '-',
+      maleKidCount: recording.maleKidCount,
+      femaleKidCount: recording.femaleKidCount,
+      sold: recording.sold ? SOLD_LABELS[recording.sold] : '-',
+      source: SOURCE_LABELS[recording.source],
+      status: STATUS_LABELS[recording.status],
+    }));
+
+    await exportService.sendExportFile(res, {
+      format,
+      resourceName: 'recording',
+      title: 'Laporan Data Recording',
+      columns,
+      rows,
+    });
+  } catch (error) {
+    console.error('Export Recordings Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan saat mengekspor data recording.',
       error: error.message,
     });
   }

@@ -3,6 +3,7 @@ const prisma = require('../../lib/prisma');
 jest.mock('../../lib/prisma', () => ({
   recording: {
     create: jest.fn(),
+    findMany: jest.fn(),
   },
 }));
 
@@ -129,5 +130,65 @@ describe('parseGoatCondition', () => {
 
   it('throws on an unrecognized value', () => {
     expect(() => parseGoatCondition('lumayan')).toThrow('Kondisi harus "Sehat" atau "Sakit".');
+  });
+});
+
+describe('exportRecordings', () => {
+  const { exportRecordings } = require('../recording.repository');
+
+  it('applies status/sold/condition/source filters, caps rows, and sorts by birthDate', async () => {
+    prisma.recording.findMany.mockResolvedValue([]);
+
+    await exportRecordings({
+      status: 'FINAL',
+      sold: 'YA',
+      condition: 'SEHAT',
+      source: 'MANUAL',
+      sortBy: 'birthDate',
+      sortDir: 'desc',
+    });
+
+    expect(prisma.recording.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: 'FINAL', sold: 'YA', condition: 'SEHAT', source: 'MANUAL' },
+        orderBy: { birthDate: 'desc' },
+        take: 5000,
+      })
+    );
+  });
+
+  it('sorts by nested farmer name when sortBy is farmer', async () => {
+    prisma.recording.findMany.mockResolvedValue([]);
+
+    await exportRecordings({ sortBy: 'farmer', sortDir: 'asc' });
+
+    expect(prisma.recording.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { goat: { farmer: { name: 'asc' } } } })
+    );
+  });
+
+  it('sorts by nested goat ear tag number when sortBy is goat', async () => {
+    prisma.recording.findMany.mockResolvedValue([]);
+
+    await exportRecordings({ sortBy: 'goat', sortDir: 'asc' });
+
+    expect(prisma.recording.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { goat: { earTagNumber: 'asc' } } })
+    );
+  });
+
+  it('applies a recordingDate range filter', async () => {
+    prisma.recording.findMany.mockResolvedValue([]);
+
+    await exportRecordings({
+      startDate: '2026-07-01',
+      endDate: '2026-07-10',
+      sortBy: 'birthDate',
+      sortDir: 'desc',
+    });
+
+    const callArgs = prisma.recording.findMany.mock.calls[0][0];
+    expect(callArgs.where.recordingDate.gte.toISOString().slice(0, 10)).toBe('2026-07-01');
+    expect(callArgs.where.recordingDate.lt.toISOString().slice(0, 10)).toBe('2026-07-11');
   });
 });

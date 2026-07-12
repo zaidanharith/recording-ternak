@@ -164,3 +164,70 @@ describe('createRecording validation', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 });
+
+const exportService = require('../../services/export.service');
+jest.mock('../../services/export.service');
+
+describe('exportRecordings', () => {
+  const { exportRecordings } = require('../recording.controller');
+
+  it('rejects an invalid format', async () => {
+    const req = { query: { format: 'csv' } };
+    const res = buildRes();
+
+    await exportRecordings(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(recordingRepository.exportRecordings).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid status filter', async () => {
+    const req = { query: { format: 'xlsx', status: 'INVALID' } };
+    const res = buildRes();
+
+    await exportRecordings(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('maps repository rows to export columns and sends the file', async () => {
+    recordingRepository.exportRecordings.mockResolvedValue([
+      {
+        goat: { earTagNumber: 12, farmer: { name: 'Budi' } },
+        birthDate: '2026-01-01T00:00:00.000Z',
+        condition: 'SEHAT',
+        maleKidCount: '1',
+        femaleKidCount: '0',
+        sold: 'YA',
+        source: 'MANUAL',
+        status: 'FINAL',
+      },
+    ]);
+
+    const req = { query: { format: 'xlsx' } };
+    const res = buildRes();
+
+    await exportRecordings(req, res);
+
+    expect(recordingRepository.exportRecordings).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'birthDate', sortDir: 'desc' })
+    );
+    expect(exportService.sendExportFile).toHaveBeenCalledWith(
+      res,
+      expect.objectContaining({
+        format: 'xlsx',
+        resourceName: 'recording',
+        rows: [
+          expect.objectContaining({
+            earTagNumber: 12,
+            farmerName: 'Budi',
+            condition: 'Sehat',
+            sold: 'Ya',
+            source: 'Manual',
+            status: 'Final',
+          }),
+        ],
+      })
+    );
+  });
+});

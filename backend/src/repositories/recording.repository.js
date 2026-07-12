@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { buildDateRangeFilter } = require('../lib/date-range');
 
 const ERR_INVALID_DATE = 'Tanggal tidak valid, gunakan format YYYY-MM-DD (contoh: 2026-07-11).';
 const ERR_INVALID_SOLD = 'Status terjual harus "Ya" atau "Tidak".';
@@ -156,6 +157,32 @@ const deleteRecording = async (id) => {
   return await prisma.recording.delete({ where: { id } });
 };
 
+const RECORDING_EXPORT_SORT_MAP = {
+  goat: (dir) => ({ goat: { earTagNumber: dir } }),
+  farmer: (dir) => ({ goat: { farmer: { name: dir } } }),
+  birthDate: (dir) => ({ birthDate: dir }),
+  source: (dir) => ({ source: dir }),
+  status: (dir) => ({ status: dir }),
+};
+
+const exportRecordings = async ({ status, sold, condition, source, startDate, endDate, sortBy, sortDir }) => {
+  const recordingDateRange = buildDateRangeFilter(startDate, endDate);
+  const where = {
+    ...(status && { status }),
+    ...(sold && { sold }),
+    ...(condition && { condition }),
+    ...(source && { source }),
+    ...(recordingDateRange && { recordingDate: recordingDateRange }),
+  };
+
+  return await prisma.recording.findMany({
+    where,
+    include: { goat: { include: { farmer: true } } },
+    orderBy: RECORDING_EXPORT_SORT_MAP[sortBy](sortDir),
+    take: 5000,
+  });
+};
+
 module.exports = {
   ERR_INVALID_DATE,
   ERR_INVALID_SOLD,
@@ -172,5 +199,6 @@ module.exports = {
   findRecordingById,
   updateRecording,
   deleteRecording,
+  exportRecordings,
 };
 
