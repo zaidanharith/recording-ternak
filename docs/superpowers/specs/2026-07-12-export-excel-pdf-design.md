@@ -26,9 +26,9 @@ Tombol Export tampil untuk semua role yang login (SUPERADMIN, ADMIN, VIEWER) —
 ### Dependency baru
 
 - `exceljs` — generate file Excel (`.xlsx`)
-- `pdfmake` — generate file PDF
+- `pdfkit` — generate file PDF
 
-Dipilih karena pure-JS, tanpa binary eksternal (beda dengan puppeteer), cocok untuk serverless function di Vercel.
+Dipilih karena pure-JS, tanpa binary eksternal (beda dengan puppeteer), cocok untuk serverless function di Vercel. `pdfkit` dipakai (bukan `pdfmake`) karena punya font standar (Helvetica) bawaan tanpa perlu bundling file font `.ttf` eksternal — tabel PDF digambar manual per baris/kolom (tanpa dukungan tabel otomatis), cukup sederhana untuk laporan tabular ini.
 
 ### Asset
 
