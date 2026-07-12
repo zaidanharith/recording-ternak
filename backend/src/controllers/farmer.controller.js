@@ -1,6 +1,7 @@
 const farmerRepository = require('../repositories/farmer.repository');
 const chatMessageRepository = require('../repositories/chat-message.repository');
 const { sendTextMessage } = require('../services/whatsapp.service');
+const exportService = require('../services/export.service');
 
 const REMINDER_MESSAGE = 'Halo Pak/Bu, kami belum menerima laporan ternak dari Anda dalam beberapa waktu terakhir. Mohon kirim laporan terbaru kondisi kambing Anda ya. Terima kasih 🙏';
 
@@ -165,6 +166,57 @@ exports.sendReminder = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan saat mengirim reminder.',
+      error: error.message,
+    });
+  }
+};
+
+const EXPORT_FORMATS = ['xlsx', 'pdf'];
+const FARMER_SORT_FIELDS = ['name', 'whatsappPhone', 'address'];
+const SORT_DIRECTIONS = ['asc', 'desc'];
+
+exports.exportFarmers = async (req, res) => {
+  try {
+    const { format, search } = req.query;
+    const sortBy = req.query.sortBy || 'name';
+    const sortDir = req.query.sortDir || 'asc';
+
+    if (!EXPORT_FORMATS.includes(format)) {
+      return res.status(400).json({ success: false, message: `format harus salah satu dari: ${EXPORT_FORMATS.join(', ')}.` });
+    }
+    if (!FARMER_SORT_FIELDS.includes(sortBy)) {
+      return res.status(400).json({ success: false, message: `sortBy harus salah satu dari: ${FARMER_SORT_FIELDS.join(', ')}.` });
+    }
+    if (!SORT_DIRECTIONS.includes(sortDir)) {
+      return res.status(400).json({ success: false, message: `sortDir harus salah satu dari: ${SORT_DIRECTIONS.join(', ')}.` });
+    }
+
+    const farmers = await farmerRepository.exportFarmers({ search, sortBy, sortDir });
+
+    const columns = [
+      { header: 'Nama', key: 'name', width: 24 },
+      { header: 'Nomor WhatsApp', key: 'whatsappPhone', width: 20 },
+      { header: 'Alamat', key: 'address', width: 30 },
+    ];
+
+    const rows = farmers.map((farmer) => ({
+      name: farmer.name,
+      whatsappPhone: farmer.whatsappPhone,
+      address: farmer.address,
+    }));
+
+    await exportService.sendExportFile(res, {
+      format,
+      resourceName: 'farmer',
+      title: 'Laporan Data Peternak',
+      columns,
+      rows,
+    });
+  } catch (error) {
+    console.error('Export Farmers Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan saat mengekspor data peternak.',
       error: error.message,
     });
   }

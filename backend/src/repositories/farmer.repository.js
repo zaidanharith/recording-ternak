@@ -117,6 +117,29 @@ const listFarmersNotReported = async (days) => {
   });
 };
 
+const FARMER_EXPORT_SORT_MAP = {
+  name: (dir) => ({ name: dir }),
+  whatsappPhone: (dir) => ({ whatsappPhone: dir }),
+  address: (dir) => ({ address: dir }),
+};
+
+const exportFarmers = async ({ search, sortBy, sortDir }) => {
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { whatsappPhone: { contains: search } },
+        ],
+      }
+    : {};
+
+  return await prisma.farmer.findMany({
+    where,
+    orderBy: FARMER_EXPORT_SORT_MAP[sortBy](sortDir),
+    take: 5000,
+  });
+};
+
 module.exports = {
   findOrCreateFarmer,
   getFarmerByPhone,
@@ -127,4 +150,5 @@ module.exports = {
   updateFarmer,
   deleteFarmer,
   listFarmersNotReported,
+  exportFarmers,
 };
