@@ -37,7 +37,7 @@ export function GoatExportDialog() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [isExporting, setIsExporting] = useState(false);
 
-  const farmersFetcher = useCallback(() => listFarmers({ page: 1, limit: 200 }), []);
+  const farmersFetcher = useCallback(() => listFarmers({ page: 1, limit: 1000 }), []);
   const { data: farmersData } = useAsync(farmersFetcher);
 
   const handleExport = async (): Promise<boolean> => {
