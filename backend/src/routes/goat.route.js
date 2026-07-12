@@ -3,13 +3,14 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/auth.middleware');
 const { requireRole } = require('../middlewares/role.middleware');
 const {
-  listGoats, getGoat, createGoat, updateGoat, deleteGoat, getNextEarTagNumber,
+  listGoats, getGoat, createGoat, updateGoat, deleteGoat, getNextEarTagNumber, exportGoats,
 } = require('../controllers/goat.controller');
 
 router.use(authMiddleware);
 
 router.get('/', listGoats);
 router.get('/next-ear-tag', getNextEarTagNumber);
+router.get('/export', exportGoats);
 router.get('/:id', getGoat);
 router.post('/', requireRole('ADMIN', 'SUPERADMIN'), createGoat);
 router.patch('/:id', requireRole('ADMIN', 'SUPERADMIN'), updateGoat);

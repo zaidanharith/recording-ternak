@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { buildDateRangeFilter } = require('../lib/date-range');
 
 /**
  * Nomor telinga disimpan sebagai Int di database, tapi bisa masuk sebagai
@@ -112,6 +113,27 @@ const listGoatsWithoutRecentRecording = async (days) => {
   });
 };
 
+const GOAT_EXPORT_SORT_MAP = {
+  earTagNumber: (dir) => ({ earTagNumber: dir }),
+  farmer: (dir) => ({ farmer: { name: dir } }),
+  createdAt: (dir) => ({ createdAt: dir }),
+};
+
+const exportGoats = async ({ farmerId, startDate, endDate, sortBy, sortDir }) => {
+  const createdAtRange = buildDateRangeFilter(startDate, endDate);
+  const where = {
+    ...(farmerId && { farmerId }),
+    ...(createdAtRange && { createdAt: createdAtRange }),
+  };
+
+  return await prisma.goat.findMany({
+    where,
+    include: { farmer: true },
+    orderBy: GOAT_EXPORT_SORT_MAP[sortBy](sortDir),
+    take: 5000,
+  });
+};
+
 module.exports = {
   parseEarTagNumber,
   findOrCreateGoat,
@@ -124,4 +146,5 @@ module.exports = {
   deleteGoat,
   getNextEarTagNumber,
   listGoatsWithoutRecentRecording,
+  exportGoats,
 };

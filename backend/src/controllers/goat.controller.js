@@ -1,4 +1,5 @@
 const goatRepository = require('../repositories/goat.repository');
+const exportService = require('../services/export.service');
 
 exports.listGoats = async (req, res) => {
   try {
@@ -139,6 +140,57 @@ exports.deleteGoat = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan saat menghapus kambing.',
+      error: error.message,
+    });
+  }
+};
+
+const EXPORT_FORMATS = ['xlsx', 'pdf'];
+const GOAT_SORT_FIELDS = ['earTagNumber', 'farmer', 'createdAt'];
+const SORT_DIRECTIONS = ['asc', 'desc'];
+
+exports.exportGoats = async (req, res) => {
+  try {
+    const { format, farmerId, startDate, endDate } = req.query;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortDir = req.query.sortDir || 'desc';
+
+    if (!EXPORT_FORMATS.includes(format)) {
+      return res.status(400).json({ success: false, message: `format harus salah satu dari: ${EXPORT_FORMATS.join(', ')}.` });
+    }
+    if (!GOAT_SORT_FIELDS.includes(sortBy)) {
+      return res.status(400).json({ success: false, message: `sortBy harus salah satu dari: ${GOAT_SORT_FIELDS.join(', ')}.` });
+    }
+    if (!SORT_DIRECTIONS.includes(sortDir)) {
+      return res.status(400).json({ success: false, message: `sortDir harus salah satu dari: ${SORT_DIRECTIONS.join(', ')}.` });
+    }
+
+    const goats = await goatRepository.exportGoats({ farmerId, startDate, endDate, sortBy, sortDir });
+
+    const columns = [
+      { header: 'No. Telinga', key: 'earTagNumber', width: 16 },
+      { header: 'Peternak', key: 'farmerName', width: 24 },
+      { header: 'Terdaftar', key: 'createdAt', width: 16 },
+    ];
+
+    const rows = goats.map((goat) => ({
+      earTagNumber: goat.earTagNumber,
+      farmerName: goat.farmer?.name ?? '-',
+      createdAt: exportService.formatDateId(goat.createdAt),
+    }));
+
+    await exportService.sendExportFile(res, {
+      format,
+      resourceName: 'goat',
+      title: 'Laporan Data Kambing',
+      columns,
+      rows,
+    });
+  } catch (error) {
+    console.error('Export Goats Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan saat mengekspor data kambing.',
       error: error.message,
     });
   }
