@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { GoatExportDialog } from "@/features/goats/components/goat-export-dialog";
 import { GoatFormDialog } from "@/features/goats/components/goat-form-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { useSortableData } from "@/hooks/use-sortable-data";
@@ -77,7 +78,12 @@ function KambingPageContent() {
       <PageHeader
         title="Kambing"
         description="Kelola data kambing yang terdaftar"
-        action={canManage && <GoatFormDialog onSaved={() => refetch()} />}
+        action={
+          <div className="flex items-center gap-2">
+            <GoatExportDialog />
+            {canManage && <GoatFormDialog onSaved={() => refetch()} />}
+          </div>
+        }
       />
 
       {farmerId && (
