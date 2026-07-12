@@ -82,6 +82,26 @@ describe('exportGoats', () => {
     expect(goatRepository.exportGoats).not.toHaveBeenCalled();
   });
 
+  it('rejects a malformed startDate', async () => {
+    const req = { query: { format: 'xlsx', startDate: 'not-a-date' } };
+    const res = buildRes();
+
+    await exportGoats(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(goatRepository.exportGoats).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed endDate', async () => {
+    const req = { query: { format: 'xlsx', endDate: 'not-a-date' } };
+    const res = buildRes();
+
+    await exportGoats(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(goatRepository.exportGoats).not.toHaveBeenCalled();
+  });
+
   it('maps repository rows to export columns and sends the file', async () => {
     goatRepository.exportGoats.mockResolvedValue([
       { earTagNumber: 7, farmer: { name: 'Budi' }, createdAt: '2026-01-01T00:00:00.000Z' },

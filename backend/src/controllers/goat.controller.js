@@ -1,5 +1,7 @@
 const goatRepository = require('../repositories/goat.repository');
 const exportService = require('../services/export.service');
+const { EXPORT_FORMATS, SORT_DIRECTIONS } = require('../config');
+const { isValidDateString } = require('../lib/date-range');
 
 exports.listGoats = async (req, res) => {
   try {
@@ -145,9 +147,7 @@ exports.deleteGoat = async (req, res) => {
   }
 };
 
-const EXPORT_FORMATS = ['xlsx', 'pdf'];
 const GOAT_SORT_FIELDS = ['earTagNumber', 'farmer', 'createdAt'];
-const SORT_DIRECTIONS = ['asc', 'desc'];
 
 exports.exportGoats = async (req, res) => {
   try {
@@ -163,6 +163,12 @@ exports.exportGoats = async (req, res) => {
     }
     if (!SORT_DIRECTIONS.includes(sortDir)) {
       return res.status(400).json({ success: false, message: `sortDir harus salah satu dari: ${SORT_DIRECTIONS.join(', ')}.` });
+    }
+    if (startDate && !isValidDateString(startDate)) {
+      return res.status(400).json({ success: false, message: 'startDate harus berformat YYYY-MM-DD.' });
+    }
+    if (endDate && !isValidDateString(endDate)) {
+      return res.status(400).json({ success: false, message: 'endDate harus berformat YYYY-MM-DD.' });
     }
 
     const goats = await goatRepository.exportGoats({ farmerId, startDate, endDate, sortBy, sortDir });

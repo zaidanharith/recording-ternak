@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const PDFDocument = require('pdfkit');
 const {
   formatDateId,
   buildExcelBuffer,
@@ -40,6 +41,23 @@ describe('buildExcelBuffer', () => {
     expect(sheet.getRow(2).getCell(1).value).toBe('Budi');
     expect(sheet.getRow(2).getCell(2).value).toBe(30);
   });
+
+  it('renders null/undefined row values as "-"', async () => {
+    const buffer = await buildExcelBuffer({
+      sheetName: 'Recording',
+      columns: [
+        { header: 'Nama', key: 'name', width: 20 },
+        { header: 'Catatan', key: 'notes', width: 20 },
+      ],
+      rows: [{ name: 'Budi', notes: null }, { name: undefined, notes: 'Sehat' }],
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const sheet = workbook.getWorksheet('Recording');
+    expect(sheet.getRow(2).getCell(2).value).toBe('-');
+    expect(sheet.getRow(3).getCell(1).value).toBe('-');
+  });
 });
 
 describe('buildPdfBuffer', () => {
@@ -63,6 +81,22 @@ describe('buildPdfBuffer', () => {
     });
 
     expect(buffer.slice(0, 4).toString()).toBe('%PDF');
+  });
+
+  it('repeats the column header row on every new page', async () => {
+    const textSpy = jest.spyOn(PDFDocument.prototype, 'text');
+    const rows = Array.from({ length: 80 }, (_, index) => ({ name: `Kambing ${index}` }));
+
+    await buildPdfBuffer({
+      title: 'Laporan Panjang',
+      columns: [{ header: 'Nama', key: 'name' }],
+      rows,
+    });
+
+    const headerCalls = textSpy.mock.calls.filter((call) => call[0] === 'Nama');
+    expect(headerCalls.length).toBeGreaterThanOrEqual(2);
+
+    textSpy.mockRestore();
   });
 });
 

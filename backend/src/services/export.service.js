@@ -19,7 +19,13 @@ const buildExcelBuffer = async ({ sheetName, columns, rows }) => {
     width: column.width || Math.max(column.header.length + 2, 12),
   }));
   sheet.getRow(1).font = { bold: true };
-  rows.forEach((row) => sheet.addRow(row));
+  rows.forEach((row) => {
+    const normalizedRow = {};
+    Object.keys(row).forEach((key) => {
+      normalizedRow[key] = row[key] ?? '-';
+    });
+    sheet.addRow(normalizedRow);
+  });
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -70,24 +76,29 @@ const buildPdfBuffer = ({ title, columns, rows }) => {
         doc.text(String(value ?? '-'), startX + index * colWidth, y, {
           width: colWidth,
           ellipsis: true,
+          lineBreak: false,
         });
       });
     };
 
+    const drawColumnHeaderRow = (headerY) => {
+      drawRow(headerY, columns.map((column) => column.header), true);
+      const separatorY = headerY + rowHeight - 5;
+      doc
+        .moveTo(startX, separatorY)
+        .lineTo(doc.page.width - startX, separatorY)
+        .strokeColor('#cccccc')
+        .stroke();
+      return separatorY + 8;
+    };
+
     let y = drawHeader();
-    drawRow(y, columns.map((column) => column.header), true);
-    y += rowHeight - 5;
-    doc
-      .moveTo(startX, y)
-      .lineTo(doc.page.width - startX, y)
-      .strokeColor('#cccccc')
-      .stroke();
-    y += 8;
+    y = drawColumnHeaderRow(y);
 
     rows.forEach((row) => {
       if (y > doc.page.height - bottomMargin) {
         doc.addPage();
-        y = 40;
+        y = drawColumnHeaderRow(40);
       }
       drawRow(y, columns.map((column) => row[column.key]), false);
       y += rowHeight;

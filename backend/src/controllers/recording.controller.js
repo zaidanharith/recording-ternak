@@ -1,15 +1,15 @@
 const recordingRepository = require('../repositories/recording.repository');
 const cloudinaryService = require('../services/cloudinary.service');
 const exportService = require('../services/export.service');
+const { EXPORT_FORMATS, SORT_DIRECTIONS } = require('../config');
+const { isValidDateString } = require('../lib/date-range');
 
 const RECORDING_STATUSES = ['PERLU_REVIEW', 'FINAL'];
 
-const EXPORT_FORMATS = ['xlsx', 'pdf'];
 const SOLD_STATUSES = ['YA', 'TIDAK'];
 const GOAT_CONDITIONS = ['SEHAT', 'SAKIT'];
 const RECORDING_SOURCES = ['WA', 'MANUAL'];
 const RECORDING_SORT_FIELDS = ['goat', 'farmer', 'birthDate', 'source', 'status'];
-const SORT_DIRECTIONS = ['asc', 'desc'];
 
 const SOLD_LABELS = { YA: 'Ya', TIDAK: 'Tidak' };
 const CONDITION_LABELS = { SEHAT: 'Sehat', SAKIT: 'Sakit' };
@@ -226,6 +226,12 @@ exports.exportRecordings = async (req, res) => {
     }
     if (!SORT_DIRECTIONS.includes(sortDir)) {
       return res.status(400).json({ success: false, message: `sortDir harus salah satu dari: ${SORT_DIRECTIONS.join(', ')}.` });
+    }
+    if (startDate && !isValidDateString(startDate)) {
+      return res.status(400).json({ success: false, message: 'startDate harus berformat YYYY-MM-DD.' });
+    }
+    if (endDate && !isValidDateString(endDate)) {
+      return res.status(400).json({ success: false, message: 'endDate harus berformat YYYY-MM-DD.' });
     }
 
     const recordings = await recordingRepository.exportRecordings({

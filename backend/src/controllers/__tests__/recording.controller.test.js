@@ -190,6 +190,26 @@ describe('exportRecordings', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  it('rejects a malformed startDate', async () => {
+    const req = { query: { format: 'xlsx', startDate: 'not-a-date' } };
+    const res = buildRes();
+
+    await exportRecordings(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(recordingRepository.exportRecordings).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed endDate', async () => {
+    const req = { query: { format: 'xlsx', endDate: 'not-a-date' } };
+    const res = buildRes();
+
+    await exportRecordings(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(recordingRepository.exportRecordings).not.toHaveBeenCalled();
+  });
+
   it('maps repository rows to export columns and sends the file', async () => {
     recordingRepository.exportRecordings.mockResolvedValue([
       {

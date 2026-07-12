@@ -2,6 +2,7 @@ const farmerRepository = require('../repositories/farmer.repository');
 const chatMessageRepository = require('../repositories/chat-message.repository');
 const { sendTextMessage } = require('../services/whatsapp.service');
 const exportService = require('../services/export.service');
+const { EXPORT_FORMATS, SORT_DIRECTIONS } = require('../config');
 
 const REMINDER_MESSAGE = 'Halo Pak/Bu, kami belum menerima laporan ternak dari Anda dalam beberapa waktu terakhir. Mohon kirim laporan terbaru kondisi kambing Anda ya. Terima kasih 🙏';
 
@@ -171,9 +172,7 @@ exports.sendReminder = async (req, res) => {
   }
 };
 
-const EXPORT_FORMATS = ['xlsx', 'pdf'];
 const FARMER_SORT_FIELDS = ['name', 'whatsappPhone', 'address'];
-const SORT_DIRECTIONS = ['asc', 'desc'];
 
 exports.exportFarmers = async (req, res) => {
   try {

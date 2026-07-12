@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const EXPORT_FORMATS = ['xlsx', 'pdf'];
+const SORT_DIRECTIONS = ['asc', 'desc'];
+
 const config = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
@@ -87,3 +90,5 @@ const config = {
 };
 
 module.exports = config;
+module.exports.EXPORT_FORMATS = EXPORT_FORMATS;
+module.exports.SORT_DIRECTIONS = SORT_DIRECTIONS;
