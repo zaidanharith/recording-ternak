@@ -98,7 +98,7 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel required>Nama</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -111,7 +111,7 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
               name="whatsappPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nomor WhatsApp</FormLabel>
+                  <FormLabel required>Nomor WhatsApp</FormLabel>
                   <FormControl>
                     <Input placeholder="62812xxxxxxx" {...field} />
                   </FormControl>

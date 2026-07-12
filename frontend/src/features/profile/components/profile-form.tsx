@@ -112,7 +112,7 @@ export function ProfileForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nama</FormLabel>
+              <FormLabel required>Nama</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>

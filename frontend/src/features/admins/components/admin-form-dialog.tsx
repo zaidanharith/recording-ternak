@@ -120,7 +120,7 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama</FormLabel>
+                  <FormLabel required>Nama</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -133,7 +133,7 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel required>Username</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -146,7 +146,7 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel required>Email</FormLabel>
                   <FormControl>
                     <Input type="email" {...field} />
                   </FormControl>
@@ -160,7 +160,7 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel required>Password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -174,7 +174,7 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel required>Role</FormLabel>
                   <FormControl>
                     <Select
                       value={field.value}

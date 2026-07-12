@@ -173,7 +173,7 @@ export function RecordingFormDialog({
               name="goatId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kambing</FormLabel>
+                  <FormLabel required>Kambing</FormLabel>
                   <FormControl>
                     <GoatSelect
                       value={field.value}
@@ -191,7 +191,7 @@ export function RecordingFormDialog({
               name="recordingDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tanggal Recording</FormLabel>
+                  <FormLabel required>Tanggal Recording</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} disabled={useToday} />
                   </FormControl>

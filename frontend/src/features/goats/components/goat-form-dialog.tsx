@@ -123,7 +123,7 @@ export function GoatFormDialog({
               name="earTagNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nomor Telinga</FormLabel>
+                  <FormLabel required>Nomor Telinga</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" {...field} disabled={autoNumber} />
                   </FormControl>
@@ -146,7 +146,7 @@ export function GoatFormDialog({
               name="farmerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Peternak</FormLabel>
+                  <FormLabel required>Peternak</FormLabel>
                   <FormControl>
                     <FarmerSelect value={field.value} onChange={field.onChange} />
                   </FormControl>
