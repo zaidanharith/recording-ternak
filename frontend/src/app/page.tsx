@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { LoginForm } from "@/features/auth/components/login-form";
@@ -21,6 +22,13 @@ export default function Home() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 text-center">
+          <Image
+            src="/logo-bumdes.png"
+            alt="Logo Bumdes Sumber Abadi"
+            width={72}
+            height={72}
+            className="mx-auto mb-4"
+          />
           <h1 className="text-lg font-semibold text-foreground">
             Recording Ternak
           </h1>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FiLogOut } from "react-icons/fi";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,13 +25,21 @@ export function AppSidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar p-4 md:flex">
-      <div className="mb-6 px-2">
-        <span className="text-lg font-semibold text-sidebar-foreground">
-          Recording Ternak
-        </span>
-        <p className="text-xs text-muted-foreground">
-          Layanan oleh Bumdes Sumber Abadi Desa Besuki
-        </p>
+      <div className="mb-6 flex items-center gap-2 px-2">
+        <Image
+          src="/logo-bumdes.png"
+          alt="Logo Bumdes Sumber Abadi"
+          width={36}
+          height={36}
+        />
+        <div>
+          <span className="text-lg font-semibold text-sidebar-foreground">
+            Recording Ternak
+          </span>
+          <p className="text-xs text-muted-foreground">
+            Layanan oleh Bumdes Sumber Abadi Desa Besuki
+          </p>
+        </div>
       </div>
       <SidebarNav role={admin?.role} />
 

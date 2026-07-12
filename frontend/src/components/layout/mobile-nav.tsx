@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { FiLogOut, FiMenu } from "react-icons/fi";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,7 +43,15 @@ export function MobileNav() {
       />
       <SheetContent side="left" className="flex w-64 flex-col p-4">
         <SheetHeader className="px-0">
-          <SheetTitle>Recording Ternak</SheetTitle>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo-bumdes.png"
+              alt="Logo Bumdes Sumber Abadi"
+              width={32}
+              height={32}
+            />
+            <SheetTitle>Recording Ternak</SheetTitle>
+          </div>
           <p className="text-xs text-muted-foreground">
             Layanan oleh Bumdes Sumber Abadi Desa Besuki
           </p>
