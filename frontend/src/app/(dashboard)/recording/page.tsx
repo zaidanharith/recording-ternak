@@ -28,6 +28,7 @@ import {
   RecordingSourceBadge,
   RecordingStatusBadge,
 } from "@/features/recordings/components/recording-badges";
+import { RecordingExportDialog } from "@/features/recordings/components/recording-export-dialog";
 import { RecordingFormDialog } from "@/features/recordings/components/recording-form-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { useSortableData } from "@/hooks/use-sortable-data";
@@ -94,7 +95,12 @@ function RecordingPageContent() {
       <PageHeader
         title="Recording"
         description="Data recording dari WhatsApp dan input manual"
-        action={canManage && <RecordingFormDialog onSaved={() => refetch()} />}
+        action={
+          <div className="flex items-center gap-2">
+            <RecordingExportDialog />
+            {canManage && <RecordingFormDialog onSaved={() => refetch()} />}
+          </div>
+        }
       />
 
       <Tabs
