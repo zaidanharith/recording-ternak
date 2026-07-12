@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FarmerExportDialog } from "@/features/farmers/components/farmer-export-dialog";
 import { FarmerFormDialog } from "@/features/farmers/components/farmer-form-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -68,9 +69,10 @@ export default function PeternakPage() {
         title="Peternak"
         description="Kelola data peternak yang terdaftar"
         action={
-          canManage && (
-            <FarmerFormDialog onSaved={() => refetch()} />
-          )
+          <div className="flex items-center gap-2">
+            <FarmerExportDialog />
+            {canManage && <FarmerFormDialog onSaved={() => refetch()} />}
+          </div>
         }
       />
 
