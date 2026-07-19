@@ -1,5 +1,6 @@
 const config = require('../config');
-const { handleMessage, handleUnsupportedMessage, handleImageMessage } = require('../services/recording.service');
+const { handleMessage, handleUnsupportedMessage, handleImageMessage, handleUnregisteredSender } = require('../services/recording.service');
+const { isFarmerRegistered } = require('../repositories/farmer.repository');
 
 const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
@@ -36,6 +37,13 @@ const handleWebhookEvent = async (req, res) => {
 
     const senderPhone = message.from;
     const senderName = value.contacts?.[0]?.profile?.name || senderPhone;
+
+    if (!(await isFarmerRegistered(senderPhone))) {
+      console.log(`🚫 [${senderName}] Pengirim belum terdaftar: ${senderPhone}`);
+      const result = await handleUnregisteredSender(senderPhone);
+      console.log(`✅ State: ${result.state}`);
+      return res.status(200).send('EVENT_RECEIVED');
+    }
 
     let result;
     if (message.type === 'text') {

@@ -18,7 +18,7 @@ const { sendTextMessage } = require('../whatsapp.service');
 const { buildHistoryContext, logTurn, pruneHistory } = require('../chat-history.service');
 const { verifySheetsConsistency } = require('../sync.service');
 
-const { handleMessage } = require('../recording.service');
+const { handleMessage, handleUnregisteredSender } = require('../recording.service');
 
 const PHOTO = { url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' };
 
@@ -111,6 +111,15 @@ describe('handleMessage photo propagation', () => {
     expect(createRecording).toHaveBeenCalledWith(
       expect.objectContaining({ photoUrl: PHOTO.url, photoPublicId: PHOTO.publicId })
     );
+  });
+});
+
+describe('handleUnregisteredSender', () => {
+  it('sends a welcome/rejection message and returns the unregistered_sender state', async () => {
+    const result = await handleUnregisteredSender('628999');
+
+    expect(sendTextMessage).toHaveBeenCalledWith('628999', expect.stringContaining('belum terdaftar'));
+    expect(result).toEqual({ state: 'unregistered_sender' });
   });
 });
 

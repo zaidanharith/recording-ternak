@@ -46,6 +46,14 @@ const DEFAULT_UNSUPPORTED_REPLY = 'Maaf, saya baru bisa membaca pesan teks, Pak/
 const PENDING_SESSION_STATES = ['awaiting_confirmation', 'awaiting_nomor_telinga'];
 const ATTACHED_STATES = ['saved', 'awaiting_confirmation', 'awaiting_nomor_telinga'];
 
+const UNREGISTERED_SENDER_REPLY =
+  'Selamat datang di layanan Recording Ternak Desa Besuki! 🐐\n\nMaaf, nomor WhatsApp Anda belum terdaftar sebagai peternak. Silakan hubungi admin utama untuk mendaftar terlebih dahulu.';
+
+const handleUnregisteredSender = async (senderPhone) => {
+  await sendTextMessage(senderPhone, UNREGISTERED_SENDER_REPLY);
+  return { state: 'unregistered_sender' };
+};
+
 const handleUnsupportedMessage = async (messageType, senderPhone, senderName) => {
   const tag = UNSUPPORTED_MESSAGE_TAGS[messageType] || `[${messageType}]`;
   const reply = UNSUPPORTED_MESSAGE_REPLIES[messageType] || DEFAULT_UNSUPPORTED_REPLY;
@@ -425,4 +433,4 @@ const handleImageMessage = async (mediaId, caption, senderPhone, senderName) => 
   return result;
 };
 
-module.exports = { handleMessage, handleUnsupportedMessage, handleImageMessage };
+module.exports = { handleMessage, handleUnsupportedMessage, handleImageMessage, handleUnregisteredSender };
