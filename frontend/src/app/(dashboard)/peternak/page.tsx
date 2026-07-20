@@ -26,6 +26,7 @@ import { FarmerFormDialog } from "@/features/farmers/components/farmer-form-dial
 import { useAsync } from "@/hooks/use-async";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSortableData } from "@/hooks/use-sortable-data";
+import { formatFarmerAddress } from "@/lib/format-address";
 import { canManageData } from "@/lib/rbac";
 import { deleteFarmer, listFarmers } from "@/services/farmer.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -47,7 +48,7 @@ export default function PeternakPage() {
     {
       name: (farmer) => farmer.name,
       whatsappPhone: (farmer) => farmer.whatsappPhone,
-      address: (farmer) => farmer.address,
+      desa: (farmer) => farmer.desa,
     },
   );
 
@@ -116,7 +117,7 @@ export default function PeternakPage() {
                   Nomor WhatsApp
                 </SortableTableHead>
                 <SortableTableHead
-                  sortKey="address"
+                  sortKey="desa"
                   currentKey={sortKey}
                   currentDirection={sortDirection}
                   onSort={toggleSort}
@@ -139,7 +140,7 @@ export default function PeternakPage() {
                   </TableCell>
                   <TableCell>{farmer.whatsappPhone}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {farmer.address}
+                    {formatFarmerAddress(farmer)}
                   </TableCell>
                   <TableCell>
                     {canManage && (

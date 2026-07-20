@@ -32,7 +32,10 @@ import type { Farmer } from "@/types/farmer";
 
 const farmerSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
-  address: z.string().optional(),
+  desa: z.string().optional(),
+  dukuh: z.string().optional(),
+  rt: z.string().optional(),
+  rw: z.string().optional(),
   whatsappPhone: whatsappPhoneSchema,
 });
 
@@ -52,7 +55,10 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: farmer?.name ?? "",
-      address: farmer?.address ?? "",
+      desa: farmer?.desa ?? "",
+      dukuh: farmer?.dukuh ?? "",
+      rt: farmer?.rt ?? "",
+      rw: farmer?.rw ?? "",
       whatsappPhone: farmer?.whatsappPhone ?? "",
     },
   });
@@ -121,10 +127,10 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
             />
             <FormField
               control={form.control}
-              name="address"
+              name="desa"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Alamat</FormLabel>
+                  <FormLabel>Desa</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -132,6 +138,47 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="dukuh"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dukuh</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="rt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RT</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rw"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RW</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Menyimpan..." : "Simpan"}

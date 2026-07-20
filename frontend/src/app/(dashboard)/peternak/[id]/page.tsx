@@ -128,8 +128,16 @@ export default function FarmerDetailPage({
       <Card className="mb-6">
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs text-muted-foreground">Alamat</p>
-            <p className="text-sm font-medium">{farmer.address}</p>
+            <p className="text-xs text-muted-foreground">Desa</p>
+            <p className="text-sm font-medium">{farmer.desa}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Dukuh</p>
+            <p className="text-sm font-medium">{farmer.dukuh}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">RT/RW</p>
+            <p className="text-sm font-medium">{farmer.rt}/{farmer.rw}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Nomor WhatsApp</p>

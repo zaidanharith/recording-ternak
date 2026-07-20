@@ -23,7 +23,7 @@ type SortDir = NonNullable<ExportFarmersQuery["sortDir"]>;
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "name", label: "Nama" },
   { value: "whatsappPhone", label: "Nomor WhatsApp" },
-  { value: "address", label: "Alamat" },
+  { value: "desa", label: "Desa" },
 ];
 
 export function FarmerExportDialog() {
