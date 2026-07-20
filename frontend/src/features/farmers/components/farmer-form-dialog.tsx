@@ -53,6 +53,8 @@ const resolveDusunCustomValue = (dusun?: string): string => {
   return dusun;
 };
 
+const stripPlaceholder = (value?: string): string => (!value || value === "-" ? "" : value);
+
 const farmerSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   dusun: z.string().optional(),
@@ -84,8 +86,8 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
         resolveDusunOption(farmer?.dusun) === "Lainnya"
           ? resolveDusunCustomValue(farmer?.dusun)
           : resolveDusunOption(farmer?.dusun),
-      rt: farmer?.rt ?? "",
-      rw: farmer?.rw ?? "",
+      rt: stripPlaceholder(farmer?.rt),
+      rw: stripPlaceholder(farmer?.rw),
       whatsappPhone: farmer?.whatsappPhone ?? "",
     },
   });
