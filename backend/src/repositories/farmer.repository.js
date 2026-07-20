@@ -101,12 +101,12 @@ const findFarmerById = async (id) => {
   });
 };
 
-const createFarmer = async ({ name, desa, dukuh, rt, rw, whatsappPhone }) => {
+const createFarmer = async ({ name, desa, dusun, rt, rw, whatsappPhone }) => {
   return await prisma.farmer.create({
     data: {
       name,
-      desa: desa || '-',
-      dukuh: dukuh || '-',
+      desa: desa || 'Besuki',
+      dusun: dusun || '-',
       rt: rt || '-',
       rw: rw || '-',
       whatsappPhone,

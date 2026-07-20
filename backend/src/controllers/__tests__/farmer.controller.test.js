@@ -94,7 +94,7 @@ describe('exportFarmers', () => {
 
   it('maps repository rows to export columns and sends the file', async () => {
     farmerRepository.exportFarmers.mockResolvedValue([
-      { name: 'Budi', whatsappPhone: '628123456789', desa: 'Besuki', dukuh: 'Krajan', rt: '001', rw: '002' },
+      { name: 'Budi', whatsappPhone: '628123456789', desa: 'Besuki', dusun: 'Krajan', rt: '001', rw: '002' },
     ]);
 
     const req = { query: { format: 'xlsx' } };
@@ -111,7 +111,7 @@ describe('exportFarmers', () => {
         format: 'xlsx',
         resourceName: 'farmer',
         rows: [
-          { name: 'Budi', whatsappPhone: '628123456789', desa: 'Besuki', dukuh: 'Krajan', rt: '001', rw: '002' },
+          { name: 'Budi', whatsappPhone: '628123456789', desa: 'Besuki', dusun: 'Krajan', rt: '001', rw: '002' },
         ],
       })
     );

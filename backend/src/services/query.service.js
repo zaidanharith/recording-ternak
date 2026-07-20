@@ -15,7 +15,7 @@ const summarizeData = (allPeternak) => {
     peternak: p.name,
     wa: p.whatsappPhone,
     desa: p.desa,
-    dukuh: p.dukuh,
+    dusun: p.dusun,
     rt: p.rt,
     rw: p.rw,
     kambing: p.goats.map((k) => {

@@ -132,8 +132,8 @@ export default function FarmerDetailPage({
             <p className="text-sm font-medium">{farmer.desa}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Dukuh</p>
-            <p className="text-sm font-medium">{farmer.dukuh}</p>
+            <p className="text-xs text-muted-foreground">Dusun</p>
+            <p className="text-sm font-medium">{farmer.dusun}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">RT/RW</p>

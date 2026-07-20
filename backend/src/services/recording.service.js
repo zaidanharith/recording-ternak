@@ -189,7 +189,7 @@ const saveReport = async (pendingData, peternak) => {
     upsertPeternak({
       nama: peternak.name,
       desa: peternak.desa,
-      dukuh: peternak.dukuh,
+      dusun: peternak.dusun,
       rt: peternak.rt,
       rw: peternak.rw,
       whatsapp_phone: peternak.whatsappPhone,

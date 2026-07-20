@@ -68,7 +68,7 @@ const config = {
     peternak: [
       { key: 'nama',           label: 'Nama Peternak' },
       { key: 'desa',           label: 'Desa'          },
-      { key: 'dukuh',          label: 'Dukuh'         },
+      { key: 'dusun',          label: 'Dusun'         },
       { key: 'rt',             label: 'RT'            },
       { key: 'rw',             label: 'RW'            },
       { key: 'whatsapp_phone', label: 'No. WhatsApp'  },

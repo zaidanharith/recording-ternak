@@ -11,8 +11,8 @@ datasource db {
 model Farmer {
   id            String   @id @default(uuid())
   name          String
-  desa          String   @default("-")
-  dukuh         String   @default("-")
+  desa          String   @default("Besuki")
+  dusun         String   @default("-")
   rt            String   @default("-")
   rw            String   @default("-")
   whatsappPhone String   @unique @map("whatsapp_phone")

@@ -47,7 +47,7 @@ exports.getFarmer = async (req, res) => {
 
 exports.createFarmer = async (req, res) => {
   try {
-    const { name, desa, dukuh, rt, rw, whatsappPhone } = req.body;
+    const { name, desa, dusun, rt, rw, whatsappPhone } = req.body;
 
     if (!name || !whatsappPhone) {
       return res.status(400).json({
@@ -56,7 +56,7 @@ exports.createFarmer = async (req, res) => {
       });
     }
 
-    const farmer = await farmerRepository.createFarmer({ name, desa, dukuh, rt, rw, whatsappPhone });
+    const farmer = await farmerRepository.createFarmer({ name, desa, dusun, rt, rw, whatsappPhone });
 
     return res.status(201).json({
       success: true,
@@ -78,11 +78,11 @@ exports.createFarmer = async (req, res) => {
 
 exports.updateFarmer = async (req, res) => {
   try {
-    const { name, desa, dukuh, rt, rw, whatsappPhone } = req.body;
+    const { name, desa, dusun, rt, rw, whatsappPhone } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
     if (desa) updateData.desa = desa;
-    if (dukuh) updateData.dukuh = dukuh;
+    if (dusun) updateData.dusun = dusun;
     if (rt) updateData.rt = rt;
     if (rw) updateData.rw = rw;
     if (whatsappPhone) updateData.whatsappPhone = whatsappPhone;
@@ -199,7 +199,7 @@ exports.exportFarmers = async (req, res) => {
       { header: 'Nama', key: 'name', width: 24 },
       { header: 'Nomor WhatsApp', key: 'whatsappPhone', width: 20 },
       { header: 'Desa', key: 'desa', width: 18 },
-      { header: 'Dukuh', key: 'dukuh', width: 18 },
+      { header: 'Dusun', key: 'dusun', width: 18 },
       { header: 'RT', key: 'rt', width: 8 },
       { header: 'RW', key: 'rw', width: 8 },
     ];
@@ -208,7 +208,7 @@ exports.exportFarmers = async (req, res) => {
       name: farmer.name,
       whatsappPhone: farmer.whatsappPhone,
       desa: farmer.desa,
-      dukuh: farmer.dukuh,
+      dusun: farmer.dusun,
       rt: farmer.rt,
       rw: farmer.rw,
     }));

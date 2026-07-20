@@ -4,7 +4,7 @@ export interface Farmer {
   id: string;
   name: string;
   desa: string;
-  dukuh: string;
+  dusun: string;
   rt: string;
   rw: string;
   whatsappPhone: string;
@@ -16,7 +16,7 @@ export interface Farmer {
 export interface CreateFarmerInput {
   name: string;
   desa?: string;
-  dukuh?: string;
+  dusun?: string;
   rt?: string;
   rw?: string;
   whatsappPhone: string;
@@ -25,7 +25,7 @@ export interface CreateFarmerInput {
 export interface UpdateFarmerInput {
   name?: string;
   desa?: string;
-  dukuh?: string;
+  dusun?: string;
   rt?: string;
   rw?: string;
   whatsappPhone?: string;
