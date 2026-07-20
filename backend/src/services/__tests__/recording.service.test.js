@@ -9,9 +9,9 @@ jest.mock('../query.service');
 jest.mock('../sync.service');
 jest.mock('../chat-history.service');
 
-const { parseMessage } = require('../gemini.service');
+const { parseMessage, classifyMessageInConfirmation } = require('../gemini.service');
 const { setSession, getSession, clearSession } = require('../session.service');
-const { findOrCreateFarmer } = require('../../repositories/farmer.repository');
+const { findOrCreateFarmer, getFarmerByPhone } = require('../../repositories/farmer.repository');
 const { findOrCreateGoat } = require('../../repositories/goat.repository');
 const { createRecording } = require('../../repositories/recording.repository');
 const { sendTextMessage } = require('../whatsapp.service');
@@ -28,6 +28,7 @@ beforeEach(() => {
   logTurn.mockResolvedValue();
   verifySheetsConsistency.mockResolvedValue();
   sendTextMessage.mockResolvedValue({});
+  getFarmerByPhone.mockResolvedValue(null);
 });
 
 describe('handleMessage photo propagation', () => {
@@ -131,6 +132,62 @@ describe('handleMessage photo propagation', () => {
       'awaiting_nomor_telinga',
       expect.objectContaining({ photo: PHOTO })
     );
+  });
+});
+
+describe('handleMessage nomor telinga prompt with registered goat list', () => {
+  it('lists the farmer\'s registered ear tag numbers, sorted, when a fresh report omits the number', async () => {
+    getSession.mockResolvedValue(null);
+    parseMessage.mockResolvedValue({
+      bukan_laporan_ternak: false,
+      nomor_telinga: '-',
+      nama_peternak: 'Budi',
+    });
+    getFarmerByPhone.mockResolvedValue({
+      id: 'f1',
+      goats: [{ earTagNumber: 105 }, { earTagNumber: 12 }],
+    });
+
+    await handleMessage('kambing beranak 2 ekor', '628123', 'Budi');
+
+    expect(getFarmerByPhone).toHaveBeenCalledWith('628123');
+    const reply = sendTextMessage.mock.calls[0][1];
+    expect(reply).toContain('🐐 12');
+    expect(reply).toContain('🐐 105');
+    expect(reply.indexOf('🐐 12')).toBeLessThan(reply.indexOf('🐐 105'));
+  });
+
+  it('does not show a goat list section when the farmer has no registered goats', async () => {
+    getSession.mockResolvedValue(null);
+    parseMessage.mockResolvedValue({
+      bukan_laporan_ternak: false,
+      nomor_telinga: '-',
+      nama_peternak: 'Budi',
+    });
+    getFarmerByPhone.mockResolvedValue({ id: 'f1', goats: [] });
+
+    await handleMessage('kambing beranak 2 ekor', '628123', 'Budi');
+
+    const reply = sendTextMessage.mock.calls[0][1];
+    expect(reply).not.toContain('terdaftar atas nama Anda');
+  });
+
+  it('lists registered ear tag numbers when a revision also omits the number', async () => {
+    getSession.mockResolvedValue({
+      state: 'awaiting_confirmation',
+      data: { parsed: { nama_peternak: 'Budi' }, nomorTelinga: '12', namaPeternak: 'Budi' },
+    });
+    classifyMessageInConfirmation.mockResolvedValue({
+      intent: 'REVISI',
+      parsed: { nomor_telinga: '-', nama_peternak: 'Budi' },
+    });
+    getFarmerByPhone.mockResolvedValue({ id: 'f1', goats: [{ earTagNumber: 7 }] });
+
+    await handleMessage('eh salah, kambingnya beranak lagi ternyata', '628123', 'Budi');
+
+    expect(getFarmerByPhone).toHaveBeenCalledWith('628123');
+    const reply = sendTextMessage.mock.calls[0][1];
+    expect(reply).toContain('🐐 7');
   });
 });
 

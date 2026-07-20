@@ -1,6 +1,6 @@
 const { parseMessage, generateChatReply, classifyMessageInConfirmation } = require('./gemini.service');
 const { setSession, getSession, clearSession } = require('./session.service');
-const { findOrCreateFarmer } = require('../repositories/farmer.repository');
+const { findOrCreateFarmer, getFarmerByPhone } = require('../repositories/farmer.repository');
 const { findOrCreateGoat } = require('../repositories/goat.repository');
 const { createRecording } = require('../repositories/recording.repository');
 const { appendRecording, upsertKambing, upsertPeternak } = require('./sheets.service');
@@ -73,6 +73,20 @@ const KONFIRMASI_NEGATIF = /^(tidak|gak|nggak|ndak|bukan|salah|cancel|batal|ulan
 
 const isKonfirmasiYa = (text) => KONFIRMASI_POSITIF.test(text.trim());
 const isKonfirmasiTidak = (text) => KONFIRMASI_NEGATIF.test(text.trim());
+
+// ─── Daftar nomor telinga kambing milik peternak ─────────────────────────────
+
+const formatGoatEarTagList = (goats) => {
+  if (!goats || goats.length === 0) return '';
+  const sorted = [...goats].sort((a, b) => a.earTagNumber - b.earTagNumber);
+  const list = sorted.map((goat) => `🐐 ${goat.earTagNumber}`).join('\n');
+  return `\n\nKambing yang terdaftar atas nama Anda:\n${list}`;
+};
+
+const getGoatEarTagListText = async (senderPhone) => {
+  const farmer = await getFarmerByPhone(senderPhone);
+  return formatGoatEarTagList(farmer?.goats);
+};
 
 // ─── Format pesan konfirmasi ringkasan ───────────────────────────────────────
 
@@ -269,7 +283,8 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
           // Revisi tanpa nomor telinga — tanya nomor telinga
           await clearSession(senderPhone);
           await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak, photo: carriedPhoto });
-          const reply = `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
+          const goatListText = await getGoatEarTagListText(senderPhone);
+          const reply = `Baik, laporan diperbarui 🔄\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?${goatListText}\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
           await sendTextMessage(senderPhone, reply);
           logReply(reply);
           return { state: 'awaiting_nomor_telinga' };
@@ -374,7 +389,8 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
   if (!nomorTelinga) {
     // Nomor telinga tidak disebutkan — tanya dulu tanpa AI
     await setSession(senderPhone, 'awaiting_nomor_telinga', { parsed, namaPeternak, photo: carriedPhoto });
-    const reply = `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
+    const goatListText = await getGoatEarTagListText(senderPhone);
+    const reply = `Terima kasih laporan dari *${namaPeternak}* 🙏\n\nBoleh minta nomor telinga/ID kambingnya, Pak/Bu?${goatListText}\n_(Mohon masukkan angka saja, contoh: 12, 105)_`;
     await sendTextMessage(senderPhone, reply);
     logReply(reply);
     return { state: 'awaiting_nomor_telinga' };
