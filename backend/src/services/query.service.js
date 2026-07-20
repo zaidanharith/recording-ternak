@@ -14,7 +14,10 @@ const summarizeData = (allPeternak) => {
   return allPeternak.map((p) => ({
     peternak: p.name,
     wa: p.whatsappPhone,
-    alamat: p.address,
+    desa: p.desa,
+    dukuh: p.dukuh,
+    rt: p.rt,
+    rw: p.rw,
     kambing: p.goats.map((k) => {
       const latest = k.recordings[0] || null;
       return {

@@ -4,16 +4,15 @@ const prisma = require('../lib/prisma');
  * Cari peternak berdasarkan nomor WhatsApp.
  * Jika belum ada, buat peternak baru.
  */
-const findOrCreateFarmer = async (whatsappPhone, { nama, alamat }) => {
+const findOrCreateFarmer = async (whatsappPhone, { nama }) => {
   const existing = await prisma.farmer.findUnique({
     where: { whatsappPhone },
   });
 
   if (existing) {
-    // Perbarui nama & alamat jika ada info baru
+    // Perbarui nama jika ada info baru
     const updateData = {};
     if (nama && nama !== '-' && nama !== existing.name) updateData.name = nama;
-    if (alamat && alamat !== '-' && alamat !== existing.address) updateData.address = alamat;
 
     if (Object.keys(updateData).length > 0) {
       return await prisma.farmer.update({
@@ -28,7 +27,6 @@ const findOrCreateFarmer = async (whatsappPhone, { nama, alamat }) => {
     data: {
       whatsappPhone,
       name: nama && nama !== '-' ? nama : 'Tanpa Nama',
-      address: alamat && alamat !== '-' ? alamat : '-',
     },
   });
 };
@@ -103,9 +101,16 @@ const findFarmerById = async (id) => {
   });
 };
 
-const createFarmer = async ({ name, address, whatsappPhone }) => {
+const createFarmer = async ({ name, desa, dukuh, rt, rw, whatsappPhone }) => {
   return await prisma.farmer.create({
-    data: { name, address: address || '-', whatsappPhone },
+    data: {
+      name,
+      desa: desa || '-',
+      dukuh: dukuh || '-',
+      rt: rt || '-',
+      rw: rw || '-',
+      whatsappPhone,
+    },
   });
 };
 
@@ -131,7 +136,7 @@ const listFarmersNotReported = async (days) => {
 const FARMER_EXPORT_SORT_MAP = {
   name: (dir) => ({ name: dir }),
   whatsappPhone: (dir) => ({ whatsappPhone: dir }),
-  address: (dir) => ({ address: dir }),
+  desa: (dir) => ({ desa: dir }),
 };
 
 const exportFarmers = async ({ search, sortBy, sortDir }) => {

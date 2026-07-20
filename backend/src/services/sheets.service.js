@@ -169,7 +169,10 @@ const syncAllFromDB = async (allPeternak) => {
 
   const peternakFieldMap = {
     nama: (p) => p.name,
-    alamat: (p) => p.address,
+    desa: (p) => p.desa,
+    dukuh: (p) => p.dukuh,
+    rt: (p) => p.rt,
+    rw: (p) => p.rw,
     whatsapp_phone: (p) => p.whatsappPhone,
   };
 

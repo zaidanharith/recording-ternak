@@ -101,7 +101,7 @@ describe('handleMessage photo propagation', () => {
         photo: PHOTO,
       },
     });
-    findOrCreateFarmer.mockResolvedValue({ id: 'f1', name: 'Budi', address: '-', whatsappPhone: '628123' });
+    findOrCreateFarmer.mockResolvedValue({ id: 'f1', name: 'Budi', desa: '-', dukuh: '-', rt: '-', rw: '-', whatsappPhone: '628123' });
     findOrCreateGoat.mockResolvedValue({ id: 'g1', earTagNumber: '12' });
     createRecording.mockResolvedValue({ id: 'r1' });
     clearSession.mockResolvedValue();

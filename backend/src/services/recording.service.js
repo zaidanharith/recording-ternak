@@ -171,7 +171,10 @@ const saveReport = async (pendingData, peternak) => {
     // Sheet Peternak: upsert agar tidak duplikat
     upsertPeternak({
       nama: peternak.name,
-      alamat: peternak.address,
+      desa: peternak.desa,
+      dukuh: peternak.dukuh,
+      rt: peternak.rt,
+      rw: peternak.rw,
       whatsapp_phone: peternak.whatsappPhone,
       createdAt: terdaftar,
     }),
@@ -215,7 +218,6 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
     if (isKonfirmasiYa(messageText)) {
       const peternak = await findOrCreateFarmer(senderPhone, {
         nama: session.data.namaPeternak,
-        alamat: session.data.parsed.alamat,
       });
       await clearSession(senderPhone);
 

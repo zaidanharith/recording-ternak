@@ -47,7 +47,7 @@ exports.getFarmer = async (req, res) => {
 
 exports.createFarmer = async (req, res) => {
   try {
-    const { name, address, whatsappPhone } = req.body;
+    const { name, desa, dukuh, rt, rw, whatsappPhone } = req.body;
 
     if (!name || !whatsappPhone) {
       return res.status(400).json({
@@ -56,7 +56,7 @@ exports.createFarmer = async (req, res) => {
       });
     }
 
-    const farmer = await farmerRepository.createFarmer({ name, address, whatsappPhone });
+    const farmer = await farmerRepository.createFarmer({ name, desa, dukuh, rt, rw, whatsappPhone });
 
     return res.status(201).json({
       success: true,
@@ -78,10 +78,13 @@ exports.createFarmer = async (req, res) => {
 
 exports.updateFarmer = async (req, res) => {
   try {
-    const { name, address, whatsappPhone } = req.body;
+    const { name, desa, dukuh, rt, rw, whatsappPhone } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
-    if (address) updateData.address = address;
+    if (desa) updateData.desa = desa;
+    if (dukuh) updateData.dukuh = dukuh;
+    if (rt) updateData.rt = rt;
+    if (rw) updateData.rw = rw;
     if (whatsappPhone) updateData.whatsappPhone = whatsappPhone;
 
     if (Object.keys(updateData).length === 0) {
@@ -172,7 +175,7 @@ exports.sendReminder = async (req, res) => {
   }
 };
 
-const FARMER_SORT_FIELDS = ['name', 'whatsappPhone', 'address'];
+const FARMER_SORT_FIELDS = ['name', 'whatsappPhone', 'desa'];
 
 exports.exportFarmers = async (req, res) => {
   try {
@@ -195,13 +198,19 @@ exports.exportFarmers = async (req, res) => {
     const columns = [
       { header: 'Nama', key: 'name', width: 24 },
       { header: 'Nomor WhatsApp', key: 'whatsappPhone', width: 20 },
-      { header: 'Alamat', key: 'address', width: 30 },
+      { header: 'Desa', key: 'desa', width: 18 },
+      { header: 'Dukuh', key: 'dukuh', width: 18 },
+      { header: 'RT', key: 'rt', width: 8 },
+      { header: 'RW', key: 'rw', width: 8 },
     ];
 
     const rows = farmers.map((farmer) => ({
       name: farmer.name,
       whatsappPhone: farmer.whatsappPhone,
-      address: farmer.address,
+      desa: farmer.desa,
+      dukuh: farmer.dukuh,
+      rt: farmer.rt,
+      rw: farmer.rw,
     }));
 
     await exportService.sendExportFile(res, {

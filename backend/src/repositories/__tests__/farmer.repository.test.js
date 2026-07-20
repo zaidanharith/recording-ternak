@@ -39,13 +39,13 @@ describe('exportFarmers', () => {
     );
   });
 
-  it('sorts by address', async () => {
+  it('sorts by desa', async () => {
     prisma.farmer.findMany.mockResolvedValue([]);
 
-    await exportFarmers({ sortBy: 'address', sortDir: 'asc' });
+    await exportFarmers({ sortBy: 'desa', sortDir: 'asc' });
 
     expect(prisma.farmer.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ orderBy: { address: 'asc' } })
+      expect.objectContaining({ orderBy: { desa: 'asc' } })
     );
   });
 });

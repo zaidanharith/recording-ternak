@@ -66,7 +66,10 @@ const config = {
     // Kolom sheet Peternak
     peternak: [
       { key: 'nama',           label: 'Nama Peternak' },
-      { key: 'alamat',         label: 'Alamat'        },
+      { key: 'desa',           label: 'Desa'          },
+      { key: 'dukuh',          label: 'Dukuh'         },
+      { key: 'rt',             label: 'RT'            },
+      { key: 'rw',             label: 'RW'            },
       { key: 'whatsapp_phone', label: 'No. WhatsApp'  },
       { key: 'createdAt',      label: 'Terdaftar'     },
     ],
@@ -75,7 +78,6 @@ const config = {
     aiParseFields: [
       { key: 'nama_peternak',      description: 'Nama lengkap peternak pemilik kambing yang melaporkan.' },
       { key: 'nomor_telinga',      description: 'Nomor tag telinga kambing. Harus berupa angka bulat/integer saja tanpa huruf (misal: "123", "5"). Isi "-" jika tidak disebutkan.' },
-      { key: 'alamat',             description: 'Alamat atau lokasi kandang peternak. Isi "-" jika tidak disebutkan.' },
       { key: 'tanggal_kawin',      description: 'Tanggal perkawinan kambing, format ISO YYYY-MM-DD. Isi "-" jika tidak disebutkan.' },
       { key: 'tanggal_beranak',    description: 'Tanggal melahirkan/beranak, format ISO YYYY-MM-DD. Isi "-" jika tidak disebutkan.' },
       { key: 'jumlah_anak_jantan', description: 'Jumlah anak jantan. Isi 0 jika tidak ada, "-" jika tidak disebutkan.' },

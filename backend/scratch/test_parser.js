@@ -73,7 +73,7 @@ const run = async () => {
       } else {
         console.log(`    ${GREEN}[OK] Berhasil diparse:${RESET}`);
         const keys = [
-          'nama_peternak', 'nomor_telinga', 'alamat',
+          'nama_peternak', 'nomor_telinga',
           'tanggal_kawin', 'tanggal_beranak',
           'jumlah_anak_jantan', 'jumlah_anak_betina',
           'perkawinan_ke', 'target_penjualan', 'terjual', 'catatan',
