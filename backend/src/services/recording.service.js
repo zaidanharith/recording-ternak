@@ -83,7 +83,7 @@ const formatDateForMessage = (isoDate) => {
   return `${day}/${month}/${year}`;
 };
 
-const buildKonfirmasiMessage = (parsed, nomorTelinga, namaPeternak) => {
+const buildKonfirmasiMessage = (parsed, nomorTelinga, namaPeternak, hasPhoto) => {
   const j = (val) => (val && val !== '-' ? val : '-');
   return [
     '📋 *Ringkasan laporan yang akan disimpan:*',
@@ -98,6 +98,9 @@ const buildKonfirmasiMessage = (parsed, nomorTelinga, namaPeternak) => {
     `🎯 Target Jual: ${j(parsed.target_penjualan)}`,
     `💰 Terjual: ${j(parsed.terjual)}`,
     parsed.catatan && parsed.catatan !== '-' ? `📝 Catatan: ${parsed.catatan}` : null,
+    hasPhoto
+      ? '📸 Foto: sudah dilampirkan ✅'
+      : '📸 Foto: belum dilampirkan _(opsional — kirim foto sekarang kalau mau melampirkan)_',
     '',
     'Apakah data di atas sudah benar?\nBalas *ya* untuk menyimpan, atau *tidak* untuk membatalkan.',
   ]
@@ -276,7 +279,7 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
         const newSessionData = { parsed, nomorTelinga, namaPeternak, photo: carriedPhoto };
         await clearSession(senderPhone);
         await setSession(senderPhone, 'awaiting_confirmation', newSessionData);
-        const summary = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
+        const summary = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak, Boolean(carriedPhoto));
         const reply = `🔄 *Laporan diperbarui. Berikut ringkasan terbaru:*\n\n${summary}`;
         await sendTextMessage(senderPhone, reply);
         logReply(reply);
@@ -318,7 +321,7 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
     await clearSession(senderPhone);
     await setSession(senderPhone, 'awaiting_confirmation', updatedData);
 
-    const reply = buildKonfirmasiMessage(session.data.parsed, nomorTelinga, session.data.namaPeternak);
+    const reply = buildKonfirmasiMessage(session.data.parsed, nomorTelinga, session.data.namaPeternak, Boolean(carriedPhoto));
     await sendTextMessage(senderPhone, reply);
     logReply(reply);
     return { state: 'awaiting_confirmation' };
@@ -379,7 +382,7 @@ const handleMessage = async (messageText, senderPhone, senderName, photo = null)
 
   // Semua data cukup — kirim ringkasan konfirmasi
   await setSession(senderPhone, 'awaiting_confirmation', { parsed, nomorTelinga, namaPeternak, photo: carriedPhoto });
-  const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak);
+  const reply = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak, Boolean(carriedPhoto));
   await sendTextMessage(senderPhone, reply);
   logReply(reply);
   return { state: 'awaiting_confirmation' };
@@ -389,15 +392,6 @@ const handleImageMessage = async (mediaId, caption, senderPhone, senderName) => 
   const trimmedCaption = (caption || '').trim();
   const session = await getSession(senderPhone);
   const hasPendingSession = session && PENDING_SESSION_STATES.includes(session.state);
-
-  if (!trimmedCaption && !hasPendingSession) {
-    const reply = 'Terima kasih fotonya, Pak/Bu 📸 Boleh minta juga laporannya dalam bentuk teks?';
-    await sendTextMessage(senderPhone, reply);
-    logTurn(senderPhone, '[image]', reply).catch((err) =>
-      console.error('❌ Gagal mencatat riwayat pesan foto:', err.message)
-    );
-    return { state: 'photo_without_context' };
-  }
 
   const { url: mediaUrl, mimeType } = await getMediaUrl(mediaId);
 
@@ -418,21 +412,44 @@ const handleImageMessage = async (mediaId, caption, senderPhone, senderName) => 
   const { url, publicId } = await cloudinaryService.uploadImage(buffer, 'recording-ternak/whatsapp');
   const photo = { url, publicId };
 
-  if (!trimmedCaption) {
-    if (session.data.photo?.publicId) {
-      cloudinaryService.deleteImage(session.data.photo.publicId);
+  if (trimmedCaption) {
+    const result = await handleMessage(trimmedCaption, senderPhone, senderName, photo);
+    if (!ATTACHED_STATES.includes(result.state)) {
+      cloudinaryService.deleteImage(publicId);
     }
+    return result;
+  }
+
+  if (session?.data?.photo?.publicId) {
+    cloudinaryService.deleteImage(session.data.photo.publicId);
+  }
+
+  if (hasPendingSession) {
     await setSession(senderPhone, session.state, { ...session.data, photo });
+
+    if (session.state === 'awaiting_confirmation') {
+      const { parsed, nomorTelinga, namaPeternak } = session.data;
+      const summary = buildKonfirmasiMessage(parsed, nomorTelinga, namaPeternak, true);
+      const reply = `📸 *Foto diterima dan ditambahkan ke laporan.*\n\n${summary}`;
+      await sendTextMessage(senderPhone, reply);
+      logTurn(senderPhone, '[image]', reply).catch((err) =>
+        console.error('❌ Gagal mencatat riwayat pesan foto:', err.message)
+      );
+      return { state: 'awaiting_confirmation' };
+    }
+
     const reply = '📸 Foto diterima, sudah ditambahkan ke laporan yang sedang diproses.';
     await sendTextMessage(senderPhone, reply);
     return { state: 'photo_attached' };
   }
 
-  const result = await handleMessage(trimmedCaption, senderPhone, senderName, photo);
-  if (!ATTACHED_STATES.includes(result.state)) {
-    cloudinaryService.deleteImage(publicId);
-  }
-  return result;
+  await setSession(senderPhone, 'photo_staged', { photo });
+  const reply = 'Terima kasih fotonya, Pak/Bu 📸 Boleh minta juga laporannya dalam bentuk teks?';
+  await sendTextMessage(senderPhone, reply);
+  logTurn(senderPhone, '[image]', reply).catch((err) =>
+    console.error('❌ Gagal mencatat riwayat pesan foto:', err.message)
+  );
+  return { state: 'photo_staged' };
 };
 
 module.exports = { handleMessage, handleUnsupportedMessage, handleImageMessage, handleUnregisteredSender };

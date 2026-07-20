@@ -9,6 +9,7 @@
  * State yang mungkin:
  *  - 'awaiting_confirmation'  : laporan sudah di-parse, menunggu user konfirmasi ("ya/tidak")
  *  - 'awaiting_nomor_telinga' : laporan terdeteksi tapi nomor telinga kosong, menunggu input user
+ *  - 'photo_staged'           : foto diterima sebelum ada laporan teks, menunggu laporan menyusul
  *
  * Sesi expired otomatis setelah TTL_MS (default: 10 menit).
  */

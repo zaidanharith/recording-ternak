@@ -112,6 +112,26 @@ describe('handleMessage photo propagation', () => {
       expect.objectContaining({ photoUrl: PHOTO.url, photoPublicId: PHOTO.publicId })
     );
   });
+
+  it('carries a photo_staged session photo into the report once the text report arrives', async () => {
+    getSession.mockResolvedValue({
+      state: 'photo_staged',
+      data: { photo: PHOTO },
+    });
+    parseMessage.mockResolvedValue({
+      bukan_laporan_ternak: false,
+      nomor_telinga: '-',
+      nama_peternak: 'Budi',
+    });
+
+    await handleMessage('kambing beranak 2 ekor', '628123', 'Budi');
+
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'awaiting_nomor_telinga',
+      expect.objectContaining({ photo: PHOTO })
+    );
+  });
 });
 
 describe('handleUnregisteredSender', () => {
@@ -130,18 +150,45 @@ jest.mock('../cloudinary.service');
 const { handleImageMessage } = require('../recording.service');
 
 describe('handleImageMessage', () => {
-  it('asks for text report and does not upload when there is no caption and no active session', async () => {
+  it('uploads and stages the photo when there is no caption and no active session', async () => {
     getSession.mockResolvedValue(null);
+    whatsappService.getMediaUrl.mockResolvedValue({ url: 'https://lookaside.fbsbx.com/media/abc', mimeType: 'image/jpeg' });
+    whatsappService.downloadMedia.mockResolvedValue(Buffer.from('bytes'));
+    cloudinaryService.uploadImage.mockResolvedValue({ url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' });
 
     const result = await handleImageMessage('media-1', '', '628123', 'Budi');
 
-    expect(whatsappService.getMediaUrl).not.toHaveBeenCalled();
-    expect(cloudinaryService.uploadImage).not.toHaveBeenCalled();
+    expect(cloudinaryService.uploadImage).toHaveBeenCalledWith(Buffer.from('bytes'), 'recording-ternak/whatsapp');
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'photo_staged',
+      expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' } })
+    );
     expect(sendTextMessage).toHaveBeenCalledWith('628123', expect.stringContaining('teks'));
-    expect(result.state).toBe('photo_without_context');
+    expect(result.state).toBe('photo_staged');
   });
 
-  it('uploads and merges the photo into an active awaiting_confirmation session when there is no caption', async () => {
+  it('deletes a previously staged photo when a second bare photo arrives with still no session', async () => {
+    getSession.mockResolvedValue({
+      state: 'photo_staged',
+      data: { photo: { url: 'https://res.cloudinary.com/demo/old.jpg', publicId: 'recording-ternak/whatsapp/old' } },
+    });
+    whatsappService.getMediaUrl.mockResolvedValue({ url: 'https://lookaside.fbsbx.com/media/abc', mimeType: 'image/jpeg' });
+    whatsappService.downloadMedia.mockResolvedValue(Buffer.from('bytes'));
+    cloudinaryService.uploadImage.mockResolvedValue({ url: 'https://res.cloudinary.com/demo/new.jpg', publicId: 'recording-ternak/whatsapp/new' });
+
+    const result = await handleImageMessage('media-1', '', '628123', 'Budi');
+
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/whatsapp/old');
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'photo_staged',
+      expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/new.jpg', publicId: 'recording-ternak/whatsapp/new' } })
+    );
+    expect(result.state).toBe('photo_staged');
+  });
+
+  it('uploads, merges, and re-sends the confirmation summary when a photo lands in awaiting_confirmation with no caption', async () => {
     getSession.mockResolvedValue({
       state: 'awaiting_confirmation',
       data: { parsed: { nama_peternak: 'Budi' }, nomorTelinga: '12', namaPeternak: 'Budi' },
@@ -158,6 +205,28 @@ describe('handleImageMessage', () => {
       'awaiting_confirmation',
       expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' } })
     );
+    expect(sendTextMessage).toHaveBeenCalledWith('628123', expect.stringContaining('sudah dilampirkan'));
+    expect(sendTextMessage).toHaveBeenCalledWith('628123', expect.stringContaining('Ringkasan'));
+    expect(result.state).toBe('awaiting_confirmation');
+  });
+
+  it('uploads, merges, and sends a short ack when a photo lands in awaiting_nomor_telinga with no caption', async () => {
+    getSession.mockResolvedValue({
+      state: 'awaiting_nomor_telinga',
+      data: { parsed: { nama_peternak: 'Budi' }, namaPeternak: 'Budi' },
+    });
+    whatsappService.getMediaUrl.mockResolvedValue({ url: 'https://lookaside.fbsbx.com/media/abc', mimeType: 'image/jpeg' });
+    whatsappService.downloadMedia.mockResolvedValue(Buffer.from('bytes'));
+    cloudinaryService.uploadImage.mockResolvedValue({ url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' });
+
+    const result = await handleImageMessage('media-1', '', '628123', 'Budi');
+
+    expect(setSession).toHaveBeenCalledWith(
+      '628123',
+      'awaiting_nomor_telinga',
+      expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/wa.jpg', publicId: 'recording-ternak/whatsapp/wa' } })
+    );
+    expect(sendTextMessage).toHaveBeenCalledWith('628123', expect.stringContaining('ditambahkan ke laporan'));
     expect(result.state).toBe('photo_attached');
   });
 
@@ -214,7 +283,7 @@ describe('handleImageMessage', () => {
       'awaiting_confirmation',
       expect.objectContaining({ photo: { url: 'https://res.cloudinary.com/demo/new.jpg', publicId: 'recording-ternak/whatsapp/new' } })
     );
-    expect(result.state).toBe('photo_attached');
+    expect(result.state).toBe('awaiting_confirmation');
   });
 
   it('rejects an unsupported mime type without uploading to Cloudinary', async () => {
