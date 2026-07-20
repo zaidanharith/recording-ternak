@@ -7,7 +7,7 @@ jest.mock('../../lib/prisma', () => ({
   },
 }));
 
-const { exportFarmers, isFarmerRegistered } = require('../farmer.repository');
+const { exportFarmers, getFarmerNameByPhone } = require('../farmer.repository');
 
 describe('exportFarmers', () => {
   it('applies a search filter across name and whatsappPhone, caps rows, and sorts by name', async () => {
@@ -50,23 +50,23 @@ describe('exportFarmers', () => {
   });
 });
 
-describe('isFarmerRegistered', () => {
-  it('returns true when a farmer exists for the given whatsappPhone', async () => {
-    prisma.farmer.findUnique.mockResolvedValue({ id: 'f1' });
+describe('getFarmerNameByPhone', () => {
+  it('returns the registered name for the given whatsappPhone', async () => {
+    prisma.farmer.findUnique.mockResolvedValue({ name: 'Pak Budi Santoso' });
 
-    const result = await isFarmerRegistered('628123');
+    const result = await getFarmerNameByPhone('628123');
 
     expect(prisma.farmer.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { whatsappPhone: '628123' } })
+      expect.objectContaining({ where: { whatsappPhone: '628123' }, select: { name: true } })
     );
-    expect(result).toBe(true);
+    expect(result).toEqual({ name: 'Pak Budi Santoso' });
   });
 
-  it('returns false when no farmer exists for the given whatsappPhone', async () => {
+  it('returns null when no farmer exists for the given whatsappPhone', async () => {
     prisma.farmer.findUnique.mockResolvedValue(null);
 
-    const result = await isFarmerRegistered('628999');
+    const result = await getFarmerNameByPhone('628999');
 
-    expect(result).toBe(false);
+    expect(result).toBe(null);
   });
 });

@@ -32,14 +32,15 @@ const findOrCreateFarmer = async (whatsappPhone, { nama }) => {
 };
 
 /**
- * Cek apakah nomor WhatsApp sudah terdaftar sebagai peternak.
+ * Ambil nama peternak terdaftar berdasarkan nomor WhatsApp.
+ * Dipakai untuk menyapa/merujuk peternak dengan nama dari database,
+ * bukan nama profil WhatsApp yang tidak bisa diandalkan.
  */
-const isFarmerRegistered = async (whatsappPhone) => {
-  const farmer = await prisma.farmer.findUnique({
+const getFarmerNameByPhone = async (whatsappPhone) => {
+  return await prisma.farmer.findUnique({
     where: { whatsappPhone },
-    select: { id: true },
+    select: { name: true },
   });
-  return !!farmer;
 };
 
 /**
@@ -158,7 +159,7 @@ const exportFarmers = async ({ search, sortBy, sortDir }) => {
 
 module.exports = {
   findOrCreateFarmer,
-  isFarmerRegistered,
+  getFarmerNameByPhone,
   getFarmerByPhone,
   searchFarmerByName,
   listFarmers,
