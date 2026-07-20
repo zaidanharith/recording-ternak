@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useCallback, useState } from "react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
@@ -30,6 +29,7 @@ import {
 } from "@/features/recordings/components/recording-badges";
 import { RecordingExportDialog } from "@/features/recordings/components/recording-export-dialog";
 import { RecordingFormDialog } from "@/features/recordings/components/recording-form-dialog";
+import { RecordingPhotoPreview } from "@/features/recordings/components/recording-photo-preview";
 import { useAsync } from "@/hooks/use-async";
 import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
@@ -182,17 +182,7 @@ function RecordingPageContent() {
               {sortedData.map((recording) => (
                 <TableRow key={recording.id}>
                   <TableCell>
-                    {recording.photoUrl ? (
-                      <Image
-                        src={recording.photoUrl}
-                        alt="Foto kambing"
-                        width={40}
-                        height={40}
-                        className="rounded-md border border-border object-cover"
-                      />
-                    ) : (
-                      <div className="size-10 rounded-md border border-dashed border-border" />
-                    )}
+                    <RecordingPhotoPreview photoUrl={recording.photoUrl} />
                   </TableCell>
                   <TableCell className="font-medium">
                     {recording.goat?.earTagNumber}
