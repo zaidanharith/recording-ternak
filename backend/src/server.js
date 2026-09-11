@@ -12,6 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+  });
+  next();
+});
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf;
