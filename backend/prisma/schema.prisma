@@ -32,6 +32,7 @@ model Goat {
   updatedAt    DateTime    @updatedAt
   recordings   Recording[]
 
+  @@index([farmerId])
   @@map("goat")
 }
 
@@ -80,6 +81,9 @@ model Recording {
   photoPublicId  String?         @map("photo_public_id")
   createdAt      DateTime        @default(now())
 
+  @@index([goatId])
+  @@index([createdAt])
+  @@index([status])
   @@map("recording")
 }
 

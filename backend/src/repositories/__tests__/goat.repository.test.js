@@ -3,10 +3,11 @@ const prisma = require('../../lib/prisma');
 jest.mock('../../lib/prisma', () => ({
   goat: {
     findMany: jest.fn(),
+    aggregate: jest.fn(),
   },
 }));
 
-const { exportGoats } = require('../goat.repository');
+const { exportGoats, getNextEarTagNumber } = require('../goat.repository');
 
 describe('exportGoats', () => {
   it('applies a farmerId filter, caps rows, and sorts by createdAt', async () => {
@@ -51,5 +52,24 @@ describe('exportGoats', () => {
     const callArgs = prisma.goat.findMany.mock.calls[0][0];
     expect(callArgs.where.createdAt.gte.toISOString().slice(0, 10)).toBe('2026-07-01');
     expect(callArgs.where.createdAt.lt.toISOString().slice(0, 10)).toBe('2026-07-11');
+  });
+});
+
+describe('getNextEarTagNumber', () => {
+  it('returns the highest ear tag number plus one', async () => {
+    prisma.goat.aggregate.mockResolvedValue({ _max: { earTagNumber: 41 } });
+
+    const next = await getNextEarTagNumber();
+
+    expect(prisma.goat.aggregate).toHaveBeenCalledWith({ _max: { earTagNumber: true } });
+    expect(next).toBe(42);
+  });
+
+  it('returns 1 when there are no goats yet', async () => {
+    prisma.goat.aggregate.mockResolvedValue({ _max: { earTagNumber: null } });
+
+    const next = await getNextEarTagNumber();
+
+    expect(next).toBe(1);
   });
 });

@@ -99,9 +99,8 @@ const deleteGoat = async (id) => {
 };
 
 const getNextEarTagNumber = async () => {
-  const goats = await prisma.goat.findMany({ select: { earTagNumber: true } });
-  const maxNumber = goats.reduce((max, goat) => Math.max(max, goat.earTagNumber), 0);
-  return maxNumber + 1;
+  const { _max } = await prisma.goat.aggregate({ _max: { earTagNumber: true } });
+  return (_max.earTagNumber ?? 0) + 1;
 };
 
 const listGoatsWithoutRecentRecording = async (days) => {
