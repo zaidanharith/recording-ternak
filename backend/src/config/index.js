@@ -37,6 +37,10 @@ const config = {
     jwtSecret: process.env.JWT_SECRET || 'fallback_secret_for_development',
     jwtExpiresIn: '7d',
     googleClientId: process.env.GOOGLE_CLIENT_ID,
+    // Google login sekarang diverifikasi terpusat di sini untuk kedua app — frontend
+    // dashboard-kematian-ternak punya Google Client ID sendiri, jadi audience yang
+    // diterima harus mencakup keduanya.
+    googleClientIds: [process.env.GOOGLE_CLIENT_ID, process.env.DASHBOARD_GOOGLE_CLIENT_ID].filter(Boolean),
   },
 
   dashboard: {

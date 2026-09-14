@@ -71,7 +71,7 @@ exports.googleLogin = async (req, res) => {
     try {
       const ticket = await googleClient.verifyIdToken({
         idToken,
-        audience: config.auth.googleClientId,
+        audience: config.auth.googleClientIds,
       });
       payload = ticket.getPayload();
     } catch (verifyError) {
