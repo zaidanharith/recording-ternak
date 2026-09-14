@@ -166,8 +166,8 @@ export function BeritaAcaraDialog({ goat, trigger }: BeritaAcaraDialogProps) {
             />
 
             <p className="text-xs text-muted-foreground">
-              Data ternak di bawah ini hanya diperlukan saat kambing ini pertama kali
-              dibuatkan berita acara di dashboard kematian ternak.
+              Data kambing di bawah ini hanya diperlukan kalau belum pernah diisi
+              sebelumnya (mis. lewat laporan kelahiran).
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField

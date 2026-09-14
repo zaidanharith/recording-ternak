@@ -6,23 +6,22 @@ export interface GenerateAktaKelahiranInput {
   format?: "docx" | "pdf";
 }
 
-export interface LaporanKelahiranTernak {
+export interface LaporanKelahiranGoat {
   id: string;
-  kodeTernak: string;
+  earTagNumber: number;
   jenisKelamin: "JANTAN" | "BETINA" | null;
-  tanggalLahir: string | null;
-  peternak: { id: string; nama: string };
-  jenisTernak: { id: string; nama: string };
+  farmer: { id: string; name: string };
 }
 
 export interface LaporanKelahiran {
   id: string;
-  ternakId: string;
+  goatId: string;
+  petugasNama: string;
   tanggalLahir: string;
   catatan: string | null;
   nomorAkta: string | null;
   createdAt: string;
-  ternak: LaporanKelahiranTernak;
+  goat: LaporanKelahiranGoat;
 }
 
 export interface UpdateLaporanKelahiranInput {

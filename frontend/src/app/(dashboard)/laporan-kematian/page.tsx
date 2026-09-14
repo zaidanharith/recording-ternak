@@ -95,8 +95,8 @@ export default function LaporanKematianPage() {
           <TableBody>
             {laporanList.map((laporan) => (
               <TableRow key={laporan.id}>
-                <TableCell className="font-medium">{laporan.ternak.kodeTernak}</TableCell>
-                <TableCell>{laporan.ternak.peternak.nama}</TableCell>
+                <TableCell className="font-medium">{laporan.goat.earTagNumber}</TableCell>
+                <TableCell>{laporan.goat.farmer.name}</TableCell>
                 <TableCell>
                   {new Date(laporan.tanggalKematian).toLocaleDateString("id-ID")}
                 </TableCell>
@@ -115,12 +115,12 @@ export default function LaporanKematianPage() {
                       />
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleDownload(laporan.id, laporan.ternak.kodeTernak, "docx")}
+                          onClick={() => handleDownload(laporan.id, String(laporan.goat.earTagNumber), "docx")}
                         >
                           Unduh Word (.docx)
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDownload(laporan.id, laporan.ternak.kodeTernak, "pdf")}
+                          onClick={() => handleDownload(laporan.id, String(laporan.goat.earTagNumber), "pdf")}
                         >
                           Unduh PDF
                         </DropdownMenuItem>
@@ -136,7 +136,7 @@ export default function LaporanKematianPage() {
                             </Button>
                           }
                           title="Hapus Laporan Kematian"
-                          description={`Yakin ingin menghapus laporan kematian untuk kambing No. Telinga ${laporan.ternak.kodeTernak}? Status ternak akan dikembalikan menjadi HIDUP.`}
+                          description={`Yakin ingin menghapus laporan kematian untuk kambing No. Telinga ${String(laporan.goat.earTagNumber)}? Status ternak akan dikembalikan menjadi HIDUP.`}
                           onConfirm={() => handleDelete(laporan.id)}
                         />
                       </>

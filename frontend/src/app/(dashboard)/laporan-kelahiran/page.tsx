@@ -94,10 +94,10 @@ export default function LaporanKelahiranPage() {
           <TableBody>
             {laporanList.map((laporan) => (
               <TableRow key={laporan.id}>
-                <TableCell className="font-medium">{laporan.ternak.kodeTernak}</TableCell>
-                <TableCell>{laporan.ternak.peternak.nama}</TableCell>
+                <TableCell className="font-medium">{laporan.goat.earTagNumber}</TableCell>
+                <TableCell>{laporan.goat.farmer.name}</TableCell>
                 <TableCell>
-                  {laporan.ternak.jenisKelamin === "JANTAN" ? "Jantan" : "Betina"}
+                  {laporan.goat.jenisKelamin === "JANTAN" ? "Jantan" : "Betina"}
                 </TableCell>
                 <TableCell>
                   {new Date(laporan.tanggalLahir).toLocaleDateString("id-ID")}
@@ -114,12 +114,12 @@ export default function LaporanKelahiranPage() {
                       />
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleDownload(laporan.id, laporan.ternak.kodeTernak, "docx")}
+                          onClick={() => handleDownload(laporan.id, String(laporan.goat.earTagNumber), "docx")}
                         >
                           Unduh Word (.docx)
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDownload(laporan.id, laporan.ternak.kodeTernak, "pdf")}
+                          onClick={() => handleDownload(laporan.id, String(laporan.goat.earTagNumber), "pdf")}
                         >
                           Unduh PDF
                         </DropdownMenuItem>
@@ -135,7 +135,7 @@ export default function LaporanKelahiranPage() {
                             </Button>
                           }
                           title="Hapus Laporan Kelahiran"
-                          description={`Yakin ingin menghapus laporan kelahiran untuk kambing No. Telinga ${laporan.ternak.kodeTernak}? Data ternak terkait juga akan terhapus.`}
+                          description={`Yakin ingin menghapus laporan kelahiran untuk kambing No. Telinga ${laporan.goat.earTagNumber}? Data kambing itu sendiri tidak ikut terhapus.`}
                           onConfirm={() => handleDelete(laporan.id)}
                         />
                       </>

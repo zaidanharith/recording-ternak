@@ -13,24 +13,23 @@ export interface GenerateBeritaAcaraInput {
   format?: "docx" | "pdf";
 }
 
-export interface LaporanKematianTernak {
+export interface LaporanKematianGoat {
   id: string;
-  kodeTernak: string;
+  earTagNumber: number;
   jenisKelamin: "JANTAN" | "BETINA" | null;
-  tanggalLahir: string | null;
-  peternak: { id: string; nama: string };
-  jenisTernak: { id: string; nama: string };
+  birthDate: string | null;
+  farmer: { id: string; name: string };
 }
 
 export interface LaporanKematian {
   id: string;
-  ternakId: string;
+  goatId: string;
   penyebabKematianId: string;
   tanggalKematian: string;
   catatan: string | null;
   nomorBeritaAcara: string | null;
   createdAt: string;
-  ternak: LaporanKematianTernak;
+  goat: LaporanKematianGoat;
   penyebabKematian: PenyebabKematian;
 }
 
