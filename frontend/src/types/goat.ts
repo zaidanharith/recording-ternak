@@ -5,6 +5,10 @@ export interface Goat {
   id: string;
   earTagNumber: number;
   farmerId: string;
+  jenisKelamin: "JANTAN" | "BETINA" | null;
+  rasRumpun: string | null;
+  birthDate: string | null;
+  status: "HIDUP" | "MATI";
   createdAt: string;
   updatedAt: string;
   farmer?: Farmer;

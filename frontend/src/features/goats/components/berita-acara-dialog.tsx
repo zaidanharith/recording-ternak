@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/form";
 import { GoatSelect } from "@/features/recordings/components/goat-select";
 import { downloadBlob } from "@/lib/download-file";
+import { getGoat } from "@/services/goat.service";
 import { generateBeritaAcara, getPenyebabKematianOptions } from "@/services/kematian.service";
 import type { Goat } from "@/types/goat";
 import type { PenyebabKematian } from "@/types/kematian";
@@ -62,6 +63,7 @@ interface BeritaAcaraDialogProps {
 export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialogProps) {
   const [open, setOpen] = useState(false);
   const [penyebabOptions, setPenyebabOptions] = useState<PenyebabKematian[]>([]);
+  const [pickedGoat, setPickedGoat] = useState<Goat | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -84,13 +86,41 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
     },
   });
 
+  const goatId = form.watch("goatId");
+  useEffect(() => {
+    if (goat || !goatId) {
+      setPickedGoat(null);
+      return;
+    }
+    getGoat(goatId)
+      .then(setPickedGoat)
+      .catch(() => setPickedGoat(null));
+  }, [goat, goatId]);
+
+  const resolvedGoat = goat ?? pickedGoat;
+  const needsJenisKelamin = !resolvedGoat?.jenisKelamin;
+  const needsTanggalLahir = !resolvedGoat?.birthDate;
+  const needsGoatDetails = needsJenisKelamin || needsTanggalLahir;
+
   const onSubmit = async (values: BeritaAcaraValues) => {
+    let hasError = false;
+    if (needsJenisKelamin && !values.jenisKelamin) {
+      form.setError("jenisKelamin", { message: "Wajib diisi — kambing ini belum punya data jenis kelamin" });
+      hasError = true;
+    }
+    if (needsTanggalLahir && !values.tanggalLahir) {
+      form.setError("tanggalLahir", { message: "Wajib diisi — kambing ini belum punya data tanggal lahir" });
+      hasError = true;
+    }
+    if (hasError) return;
+
     try {
       const blob = await generateBeritaAcara(values.goatId, values);
-      downloadBlob(blob, `berita-acara-${goat?.earTagNumber ?? values.goatId}.${values.format}`);
+      downloadBlob(blob, `berita-acara-${resolvedGoat?.earTagNumber ?? values.goatId}.${values.format}`);
       toast.success("Berita acara berhasil dibuat.");
       setOpen(false);
       form.reset();
+      setPickedGoat(null);
       onCreated?.();
     } catch (error) {
       const message =
@@ -185,17 +215,19 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
               )}
             />
 
-            <p className="text-xs text-muted-foreground">
-              Data kambing di bawah ini hanya diperlukan kalau belum pernah diisi
-              sebelumnya (mis. lewat laporan kelahiran).
-            </p>
+            {needsGoatDetails && (
+              <p className="text-xs text-muted-foreground">
+                Kambing ini belum punya data jenis kelamin/tanggal lahir tersimpan —
+                lengkapi di bawah ini sebelum melanjutkan.
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="jenisKelamin"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Jenis Kelamin</FormLabel>
+                    <FormLabel required={needsJenisKelamin}>Jenis Kelamin</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -221,7 +253,7 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
                 name="tanggalLahir"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tanggal Lahir</FormLabel>
+                    <FormLabel required={needsTanggalLahir}>Tanggal Lahir</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
