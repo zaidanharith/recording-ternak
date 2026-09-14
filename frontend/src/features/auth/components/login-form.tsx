@@ -8,6 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { GoogleLogin } from "@react-oauth/google";
 import { isAxiosError } from "axios";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ export function LoginForm() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -96,7 +98,26 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel required>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="********" {...field} />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="********"
+                      className="pr-8"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <FiEyeOff className="size-4" />
+                      ) : (
+                        <FiEye className="size-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
