@@ -1,86 +1,117 @@
-const { dashboardFetch } = require('../lib/dashboard-client');
+const goatRepository = require('../repositories/goat.repository');
+const penyebabKematianRepository = require('../repositories/penyebab-kematian.repository');
+const laporanKematianRepository = require('../repositories/laporan-kematian.repository');
+const dashboardSyncService = require('./dashboard-sync.service');
+const { generateBeritaAcaraDocx, generateBeritaAcaraPdf } = require('./berita-acara.service');
 
-const JENIS_TERNAK_KAMBING = 'Kambing';
-
-async function getPenyebabKematianOptions(token) {
-  const { payload } = await dashboardFetch('/api/penyebab-kematian', { token });
-  return payload.data.penyebabKematian;
+async function getPenyebabKematianOptions() {
+  return await penyebabKematianRepository.listPenyebabKematian();
 }
 
-/**
- * Pastikan Ternak (kambing) sudah ada di dashboard-kematian-ternak, lalu kembalikan id-nya.
- * Ini dipanggil setiap kali generate berita acara — dashboard yang melakukan upsert
- * berdasarkan kodeTernak, jadi generate berikutnya untuk kambing yang sama tidak dobel.
- */
-async function provisionTernak({ goat, jenisKelamin, tanggalLahir, rasRumpun }, token) {
-  const { payload } = await dashboardFetch('/api/ternak/provision', {
-    method: 'POST',
-    token,
-    body: {
-      kodeTernak: String(goat.earTagNumber),
-      jenisTernakNama: JENIS_TERNAK_KAMBING,
-      peternakId: goat.farmerId,
-      jenisKelamin,
-      tanggalLahir,
-      rasRumpun,
-    },
+async function createLaporanKematian({ goat, penyebabKematianId, tanggalKematian, catatan, jenisKelamin, tanggalLahir, rasRumpun }, petugasId) {
+  if (goat.status === 'MATI') {
+    const error = new Error('Kambing ini sudah dilaporkan mati sebelumnya.');
+    error.status = 400;
+    throw error;
+  }
+
+  const resolvedJenisKelamin = goat.jenisKelamin || jenisKelamin;
+  const resolvedTanggalLahir = goat.birthDate || tanggalLahir;
+
+  if (!resolvedJenisKelamin || !resolvedTanggalLahir) {
+    const error = new Error(
+      'Data kambing (jenis kelamin, tanggal lahir) belum lengkap. Lengkapi data kambing terlebih dahulu sebelum membuat laporan kematian.',
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  if (!goat.jenisKelamin || !goat.birthDate || !goat.rasRumpun) {
+    await goatRepository.updateGoat(goat.id, {
+      jenisKelamin: goat.jenisKelamin || jenisKelamin,
+      birthDate: goat.birthDate || new Date(tanggalLahir),
+      rasRumpun: goat.rasRumpun || rasRumpun,
+    });
+  }
+
+  const penyebabKematian = await penyebabKematianRepository.findPenyebabKematianById(penyebabKematianId);
+  if (!penyebabKematian) {
+    const error = new Error('Penyebab kematian tidak ditemukan.');
+    error.status = 400;
+    throw error;
+  }
+
+  const laporan = await laporanKematianRepository.createLaporanKematian({
+    goatId: goat.id,
+    penyebabKematianId,
+    petugasId,
+    tanggalKematian,
+    catatan,
   });
-  return payload.data.ternak;
+
+  await dashboardSyncService.pushLaporanKematianUpsert(laporan, laporan.goat, penyebabKematian.nama);
+
+  return laporan;
 }
 
-async function createLaporanKematian({ ternakId, penyebabKematianId, tanggalKematian, catatan }, token) {
-  const { payload } = await dashboardFetch('/api/laporan-kematian', {
-    method: 'POST',
-    token,
-    body: { ternakId, penyebabKematianId, tanggalKematian, catatan },
-  });
-  return payload.data.laporan;
-}
+async function getBeritaAcaraFile(laporanId, format) {
+  const laporan = await laporanKematianRepository.findLaporanKematianById(laporanId);
+  if (!laporan) {
+    const error = new Error('Laporan kematian tidak ditemukan.');
+    error.status = 404;
+    throw error;
+  }
 
-async function getBeritaAcaraFile(laporanId, format, token) {
-  const { payload, response } = await dashboardFetch(
-    `/api/laporan-kematian/${laporanId}/berita-acara?format=${format === 'pdf' ? 'pdf' : 'docx'}`,
-    { token },
-  );
+  if (format === 'pdf') {
+    const buffer = await generateBeritaAcaraPdf(laporan);
+    return {
+      buffer,
+      contentType: 'application/pdf',
+      contentDisposition: `attachment; filename="berita-acara-${laporan.goat.earTagNumber}.pdf"`,
+    };
+  }
 
+  const buffer = generateBeritaAcaraDocx(laporan);
   return {
-    buffer: Buffer.from(payload),
-    contentType: response.headers.get('content-type'),
-    contentDisposition: response.headers.get('content-disposition'),
+    buffer,
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    contentDisposition: `attachment; filename="berita-acara-${laporan.goat.earTagNumber}.docx"`,
   };
 }
 
-/**
- * Daftar laporan kematian, dipersempit ke ternak jenis Kambing saja —
- * dashboard-kematian-ternak mencatat kematian segala jenis ternak, tapi
- * recording-ternak cuma urusan kambing.
- */
-async function listLaporanKematian(token) {
-  const { payload } = await dashboardFetch('/api/laporan-kematian', { token });
-  return payload.data.laporanKematian.filter((laporan) => laporan.ternak.jenisTernak.nama === JENIS_TERNAK_KAMBING);
+async function listLaporanKematian() {
+  return await laporanKematianRepository.listLaporanKematian();
 }
 
-async function getLaporanKematianById(id, token) {
-  const { payload } = await dashboardFetch(`/api/laporan-kematian/${id}`, { token });
-  return payload.data.laporan;
+async function getLaporanKematianById(id) {
+  return await laporanKematianRepository.findLaporanKematianById(id);
 }
 
-async function updateLaporanKematian(id, { penyebabKematianId, tanggalKematian, catatan }, token) {
-  const { payload } = await dashboardFetch(`/api/laporan-kematian/${id}`, {
-    method: 'PATCH',
-    token,
-    body: { penyebabKematianId, tanggalKematian, catatan },
+async function updateLaporanKematian(id, { penyebabKematianId, tanggalKematian, catatan }) {
+  const laporan = await laporanKematianRepository.updateLaporanKematian(id, {
+    penyebabKematianId,
+    tanggalKematian,
+    catatan,
   });
-  return payload.data.laporan;
+  if (!laporan) return null;
+
+  const penyebabKematian =
+    laporan.penyebabKematian || (await penyebabKematianRepository.findPenyebabKematianById(laporan.penyebabKematianId));
+  await dashboardSyncService.pushLaporanKematianUpsert(laporan, laporan.goat, penyebabKematian.nama);
+
+  return laporan;
 }
 
-async function deleteLaporanKematian(id, token) {
-  await dashboardFetch(`/api/laporan-kematian/${id}`, { method: 'DELETE', token });
+async function deleteLaporanKematian(id) {
+  const laporan = await laporanKematianRepository.deleteLaporanKematianById(id);
+  if (!laporan) return null;
+
+  await dashboardSyncService.pushLaporanKematianDelete(id);
+  return laporan;
 }
 
 module.exports = {
   getPenyebabKematianOptions,
-  provisionTernak,
   createLaporanKematian,
   getBeritaAcaraFile,
   listLaporanKematian,

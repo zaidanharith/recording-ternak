@@ -1,78 +1,81 @@
-const { dashboardFetch } = require('../lib/dashboard-client');
-
-const JENIS_TERNAK_KAMBING = 'Kambing';
-
-async function getJenisTernakKambingId(token) {
-  const { payload } = await dashboardFetch('/api/jenis-ternak', { token });
-  const jenisTernak = payload.data.jenisTernak.find((item) => item.nama === JENIS_TERNAK_KAMBING);
-  if (!jenisTernak) {
-    const error = new Error(`Jenis ternak "${JENIS_TERNAK_KAMBING}" tidak ditemukan di dashboard.`);
-    error.status = 500;
-    throw error;
-  }
-  return jenisTernak.id;
-}
+const goatRepository = require('../repositories/goat.repository');
+const laporanKelahiranRepository = require('../repositories/laporan-kelahiran.repository');
+const dashboardSyncService = require('./dashboard-sync.service');
+const { generateAktaKelahiranDocx, generateAktaKelahiranPdf } = require('./akta-kelahiran.service');
 
 /**
- * Kelahiran selalu registrasi Ternak baru di dashboard (kodeTernak = ear tag kambing) —
- * beda dengan kematian yang upsert Ternak yang sudah ada.
+ * Kelahiran selalu buat laporan baru untuk kambing yang sudah ada — beda dengan kematian
+ * yang menghalangi laporan kedua untuk kambing yang sama (unique constraint di goatId).
  */
-async function createLaporanKelahiran({ goat, jenisKelamin, tanggalLahir, rasRumpun, catatan }, token) {
-  const jenisTernakId = await getJenisTernakKambingId(token);
-  const { payload } = await dashboardFetch('/api/laporan-kelahiran', {
-    method: 'POST',
-    token,
-    body: {
-      peternakId: goat.farmerId,
-      jenisTernakId,
-      kodeTernak: String(goat.earTagNumber),
-      jenisKelamin,
-      rasRumpun,
-      tanggalLahir,
-      catatan,
-    },
+async function createLaporanKelahiran({ goat, jenisKelamin, tanggalLahir, rasRumpun, catatan }, petugas) {
+  if (!goat.jenisKelamin || !goat.rasRumpun || !goat.birthDate) {
+    await goatRepository.updateGoat(goat.id, {
+      jenisKelamin: goat.jenisKelamin || jenisKelamin,
+      rasRumpun: goat.rasRumpun || rasRumpun,
+      birthDate: goat.birthDate || new Date(tanggalLahir),
+    });
+  }
+
+  const laporan = await laporanKelahiranRepository.createLaporanKelahiran({
+    goatId: goat.id,
+    petugasId: petugas.id,
+    petugasNama: petugas.name,
+    tanggalLahir,
+    catatan,
   });
-  return payload.data.laporan;
+
+  await dashboardSyncService.pushLaporanKelahiranUpsert(laporan, laporan.goat);
+
+  return laporan;
 }
 
-async function getAktaFile(laporanId, format, token) {
-  const { payload, response } = await dashboardFetch(
-    `/api/laporan-kelahiran/${laporanId}/akta?format=${format === 'pdf' ? 'pdf' : 'docx'}`,
-    { token },
-  );
+async function getAktaFile(laporanId, format) {
+  const laporan = await laporanKelahiranRepository.findLaporanKelahiranById(laporanId);
+  if (!laporan) {
+    const error = new Error('Laporan kelahiran tidak ditemukan.');
+    error.status = 404;
+    throw error;
+  }
 
+  if (format === 'pdf') {
+    const buffer = await generateAktaKelahiranPdf(laporan);
+    return {
+      buffer,
+      contentType: 'application/pdf',
+      contentDisposition: `attachment; filename="akta-kelahiran-${laporan.goat.earTagNumber}.pdf"`,
+    };
+  }
+
+  const buffer = generateAktaKelahiranDocx(laporan);
   return {
-    buffer: Buffer.from(payload),
-    contentType: response.headers.get('content-type'),
-    contentDisposition: response.headers.get('content-disposition'),
+    buffer,
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    contentDisposition: `attachment; filename="akta-kelahiran-${laporan.goat.earTagNumber}.docx"`,
   };
 }
 
-/**
- * Daftar laporan kelahiran, dipersempit ke ternak jenis Kambing saja — sama alasan
- * dengan listLaporanKematian di kematian.service.js.
- */
-async function listLaporanKelahiran(token) {
-  const { payload } = await dashboardFetch('/api/laporan-kelahiran', { token });
-  return payload.data.laporanKelahiran.filter((laporan) => laporan.ternak.jenisTernak.nama === JENIS_TERNAK_KAMBING);
+async function listLaporanKelahiran() {
+  return await laporanKelahiranRepository.listLaporanKelahiran();
 }
 
-async function getLaporanKelahiranById(id, token) {
-  const { payload } = await dashboardFetch(`/api/laporan-kelahiran/${id}`, { token });
-  return payload.data.laporan;
+async function getLaporanKelahiranById(id) {
+  return await laporanKelahiranRepository.findLaporanKelahiranById(id);
 }
 
-async function updateLaporanKelahiran(id, { tanggalLahir, catatan, nomorAkta }, token) {
-  const { payload } = await dashboardFetch(`/api/laporan-kelahiran/${id}`, {
-    method: 'PATCH',
-    token,
-    body: { tanggalLahir, catatan, nomorAkta },
-  });
-  return payload.data.laporan;
+async function updateLaporanKelahiran(id, { tanggalLahir, catatan, nomorAkta }) {
+  const laporan = await laporanKelahiranRepository.updateLaporanKelahiran(id, { tanggalLahir, catatan, nomorAkta });
+  if (!laporan) return null;
+
+  await dashboardSyncService.pushLaporanKelahiranUpsert(laporan, laporan.goat);
+  return laporan;
 }
 
-async function deleteLaporanKelahiran(id, token) {
-  await dashboardFetch(`/api/laporan-kelahiran/${id}`, { method: 'DELETE', token });
+async function deleteLaporanKelahiran(id) {
+  const laporan = await laporanKelahiranRepository.deleteLaporanKelahiranById(id);
+  if (!laporan) return null;
+
+  await dashboardSyncService.pushLaporanKelahiranDelete(id);
+  return laporan;
 }
 
 module.exports = {

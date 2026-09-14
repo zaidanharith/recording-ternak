@@ -59,6 +59,17 @@ const getGoatByEarTagNumber = async (earTagNumber) => {
   });
 };
 
+/**
+ * Cari kambing berdasarkan nomor telinga tanpa melempar error untuk input tidak valid —
+ * dipakai penerima sync dari dashboard, yang harus best-effort skip (bukan crash) kalau
+ * kodeTernak yang dikirim bukan angka atau kambingnya belum ada di sini.
+ */
+const findGoatByEarTagNumberOrNull = async (earTagNumber) => {
+  const parsed = Number(earTagNumber);
+  if (!Number.isInteger(parsed)) return null;
+  return await prisma.goat.findUnique({ where: { earTagNumber: parsed } });
+};
+
 const listGoats = async ({ farmerId, page, limit }) => {
   const where = { ...(farmerId && { farmerId }) };
 
@@ -138,6 +149,7 @@ module.exports = {
   findOrCreateGoat,
   getGoatsByFarmerId,
   getGoatByEarTagNumber,
+  findGoatByEarTagNumberOrNull,
   listGoats,
   findGoatById,
   createGoat,

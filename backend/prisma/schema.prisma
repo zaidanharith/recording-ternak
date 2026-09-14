@@ -23,17 +23,77 @@ model Farmer {
   @@map("farmer")
 }
 
+enum JenisKelamin {
+  JANTAN
+  BETINA
+
+  @@map("jenis_kelamin")
+}
+
+enum StatusTernak {
+  HIDUP
+  MATI
+
+  @@map("status_ternak")
+}
+
 model Goat {
-  id           String      @id @default(uuid())
-  earTagNumber Int         @unique @map("ear_tag_number")
-  farmerId     String      @map("farmer_id")
-  farmer       Farmer      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  recordings   Recording[]
+  id               String            @id @default(uuid())
+  earTagNumber     Int               @unique @map("ear_tag_number")
+  farmerId         String            @map("farmer_id")
+  farmer           Farmer            @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  jenisKelamin     JenisKelamin?     @map("jenis_kelamin")
+  rasRumpun        String?           @map("ras_rumpun")
+  birthDate        DateTime?         @map("birth_date") @db.Date
+  status           StatusTernak      @default(HIDUP)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  recordings       Recording[]
+  laporanKematian  LaporanKematian[]
+  laporanKelahiran LaporanKelahiran?
 
   @@index([farmerId])
   @@map("goat")
+}
+
+model PenyebabKematian {
+  id   String @id @default(uuid())
+  nama String @unique
+
+  laporanKematian LaporanKematian[]
+
+  @@map("penyebab_kematian")
+}
+
+model LaporanKematian {
+  id                 String           @id @default(uuid())
+  goatId             String           @map("goat_id")
+  goat               Goat             @relation(fields: [goatId], references: [id], onDelete: Restrict)
+  penyebabKematianId String           @map("penyebab_kematian_id")
+  penyebabKematian   PenyebabKematian @relation(fields: [penyebabKematianId], references: [id], onDelete: Restrict)
+  petugasId          String           @map("petugas_id")
+  tanggalKematian    DateTime         @map("tanggal_kematian") @db.Date
+  catatan            String?
+  nomorBeritaAcara   String?          @map("nomor_berita_acara")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@map("laporan_kematian")
+}
+
+model LaporanKelahiran {
+  id           String   @id @default(uuid())
+  goatId       String   @unique @map("goat_id")
+  goat         Goat     @relation(fields: [goatId], references: [id], onDelete: Cascade)
+  petugasId    String   @map("petugas_id")
+  petugasNama  String   @map("petugas_nama")
+  tanggalLahir DateTime @map("tanggal_lahir") @db.Date
+  catatan      String?
+  nomorAkta    String?  @map("nomor_akta")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("laporan_kelahiran")
 }
 
 enum RecordingStatus {
