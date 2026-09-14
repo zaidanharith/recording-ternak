@@ -34,11 +34,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { GoatSelect } from "@/features/recordings/components/goat-select";
 import { downloadBlob } from "@/lib/download-file";
 import { generateAktaKelahiran } from "@/services/kelahiran.service";
 import type { Goat } from "@/types/goat";
 
 const aktaKelahiranSchema = z.object({
+  goatId: z.string().min(1, "Kambing wajib dipilih"),
   jenisKelamin: z.enum(["JANTAN", "BETINA"], { message: "Jenis kelamin wajib dipilih" }),
   tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi"),
   rasRumpun: z.string().optional(),
@@ -49,16 +51,18 @@ const aktaKelahiranSchema = z.object({
 type AktaKelahiranValues = z.infer<typeof aktaKelahiranSchema>;
 
 interface AktaKelahiranDialogProps {
-  goat: Goat;
+  goat?: Goat;
+  onCreated?: () => void;
   trigger?: React.ReactElement;
 }
 
-export function AktaKelahiranDialog({ goat, trigger }: AktaKelahiranDialogProps) {
+export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranDialogProps) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<AktaKelahiranValues>({
     resolver: zodResolver(aktaKelahiranSchema),
     defaultValues: {
+      goatId: goat?.id ?? "",
       jenisKelamin: undefined,
       tanggalLahir: "",
       rasRumpun: "",
@@ -69,11 +73,12 @@ export function AktaKelahiranDialog({ goat, trigger }: AktaKelahiranDialogProps)
 
   const onSubmit = async (values: AktaKelahiranValues) => {
     try {
-      const blob = await generateAktaKelahiran(goat.id, values);
-      downloadBlob(blob, `akta-kelahiran-${goat.earTagNumber}.${values.format}`);
+      const blob = await generateAktaKelahiran(values.goatId, values);
+      downloadBlob(blob, `akta-kelahiran-${goat?.earTagNumber ?? values.goatId}.${values.format}`);
       toast.success("Akta kelahiran berhasil dibuat.");
       setOpen(false);
       form.reset();
+      onCreated?.();
     } catch (error) {
       const message =
         isAxiosError(error) && error.response?.data?.message
@@ -101,6 +106,21 @@ export function AktaKelahiranDialog({ goat, trigger }: AktaKelahiranDialogProps)
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            {!goat && (
+              <FormField
+                control={form.control}
+                name="goatId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Kambing</FormLabel>
+                    <FormControl>
+                      <GoatSelect value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}

@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LaporanKematianEditDialog } from "@/features/kematian/components/laporan-kematian-edit-dialog";
+import { BeritaAcaraDialog } from "@/features/goats/components/berita-acara-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { downloadBlob } from "@/lib/download-file";
 import { canManageData } from "@/lib/rbac";
@@ -71,6 +72,7 @@ export default function LaporanKematianPage() {
       <PageHeader
         title="Laporan Kematian"
         description="Laporan kematian kambing yang sudah dibuatkan berita acara"
+        action={canManage && <BeritaAcaraDialog onCreated={refetch} />}
       />
 
       {isLoading ? (

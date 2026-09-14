@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LaporanKelahiranEditDialog } from "@/features/kelahiran/components/laporan-kelahiran-edit-dialog";
+import { AktaKelahiranDialog } from "@/features/goats/components/akta-kelahiran-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { downloadBlob } from "@/lib/download-file";
 import { canManageData } from "@/lib/rbac";
@@ -70,6 +71,7 @@ export default function LaporanKelahiranPage() {
       <PageHeader
         title="Laporan Kelahiran"
         description="Akta kelahiran kambing yang sudah dibuat"
+        action={canManage && <AktaKelahiranDialog onCreated={refetch} />}
       />
 
       {isLoading ? (

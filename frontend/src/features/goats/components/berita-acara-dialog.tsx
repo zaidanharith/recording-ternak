@@ -34,12 +34,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { GoatSelect } from "@/features/recordings/components/goat-select";
 import { downloadBlob } from "@/lib/download-file";
 import { generateBeritaAcara, getPenyebabKematianOptions } from "@/services/kematian.service";
 import type { Goat } from "@/types/goat";
 import type { PenyebabKematian } from "@/types/kematian";
 
 const beritaAcaraSchema = z.object({
+  goatId: z.string().min(1, "Kambing wajib dipilih"),
   tanggalKematian: z.string().min(1, "Tanggal kematian wajib diisi"),
   penyebabKematianId: z.string().min(1, "Penyebab kematian wajib dipilih"),
   catatan: z.string().optional(),
@@ -52,11 +54,12 @@ const beritaAcaraSchema = z.object({
 type BeritaAcaraValues = z.infer<typeof beritaAcaraSchema>;
 
 interface BeritaAcaraDialogProps {
-  goat: Goat;
+  goat?: Goat;
+  onCreated?: () => void;
   trigger?: React.ReactElement;
 }
 
-export function BeritaAcaraDialog({ goat, trigger }: BeritaAcaraDialogProps) {
+export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialogProps) {
   const [open, setOpen] = useState(false);
   const [penyebabOptions, setPenyebabOptions] = useState<PenyebabKematian[]>([]);
 
@@ -70,6 +73,7 @@ export function BeritaAcaraDialog({ goat, trigger }: BeritaAcaraDialogProps) {
   const form = useForm<BeritaAcaraValues>({
     resolver: zodResolver(beritaAcaraSchema),
     defaultValues: {
+      goatId: goat?.id ?? "",
       tanggalKematian: "",
       penyebabKematianId: "",
       catatan: "",
@@ -82,11 +86,12 @@ export function BeritaAcaraDialog({ goat, trigger }: BeritaAcaraDialogProps) {
 
   const onSubmit = async (values: BeritaAcaraValues) => {
     try {
-      const blob = await generateBeritaAcara(goat.id, values);
-      downloadBlob(blob, `berita-acara-${goat.earTagNumber}.${values.format}`);
+      const blob = await generateBeritaAcara(values.goatId, values);
+      downloadBlob(blob, `berita-acara-${goat?.earTagNumber ?? values.goatId}.${values.format}`);
       toast.success("Berita acara berhasil dibuat.");
       setOpen(false);
       form.reset();
+      onCreated?.();
     } catch (error) {
       const message =
         isAxiosError(error) && error.response?.data?.message
@@ -114,6 +119,21 @@ export function BeritaAcaraDialog({ goat, trigger }: BeritaAcaraDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            {!goat && (
+              <FormField
+                control={form.control}
+                name="goatId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Kambing</FormLabel>
+                    <FormControl>
+                      <GoatSelect value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="tanggalKematian"
