@@ -123,6 +123,33 @@ const deleteFarmer = async (id) => {
   return await prisma.farmer.delete({ where: { id } });
 };
 
+/**
+ * Upsert peternak dengan id tetap (dipakai saat menerima sync dari dashboard-kematian-ternak,
+ * supaya kedua database punya row dengan id yang sama untuk peternak yang sama).
+ */
+const upsertFarmerById = async (id, { name, desa, dusun, rt, rw, whatsappPhone }) => {
+  return await prisma.farmer.upsert({
+    where: { id },
+    create: {
+      id,
+      name,
+      desa: desa || 'Besuki',
+      dusun: dusun || '-',
+      rt: rt || '-',
+      rw: rw || '-',
+      whatsappPhone,
+    },
+    update: {
+      ...(name && { name }),
+      ...(desa && { desa }),
+      ...(dusun && { dusun }),
+      ...(rt && { rt }),
+      ...(rw && { rw }),
+      ...(whatsappPhone && { whatsappPhone }),
+    },
+  });
+};
+
 const listFarmersNotReported = async (days) => {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   return await prisma.farmer.findMany({
@@ -167,6 +194,7 @@ module.exports = {
   createFarmer,
   updateFarmer,
   deleteFarmer,
+  upsertFarmerById,
   listFarmersNotReported,
   exportFarmers,
 };

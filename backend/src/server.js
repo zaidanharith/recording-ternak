@@ -7,6 +7,7 @@ if (typeof dns.setDefaultResultOrder === 'function') {
 const express = require('express');
 const cors = require('cors');
 const apiRoutes = require('./routes/api');
+const internalRoutes = require('./routes/internal.route');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', apiRoutes);
+app.use('/internal', internalRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Recording Ternak Backend is healthy' });

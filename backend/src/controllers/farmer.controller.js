@@ -2,6 +2,7 @@ const farmerRepository = require('../repositories/farmer.repository');
 const chatMessageRepository = require('../repositories/chat-message.repository');
 const { sendTextMessage } = require('../services/whatsapp.service');
 const exportService = require('../services/export.service');
+const dashboardSyncService = require('../services/dashboard-sync.service');
 const { EXPORT_FORMATS, SORT_DIRECTIONS } = require('../config');
 
 const REMINDER_MESSAGE = 'Halo Pak/Bu, kami belum menerima laporan ternak dari Anda dalam beberapa waktu terakhir. Mohon kirim laporan terbaru kondisi kambing Anda ya. Terima kasih 🙏';
@@ -57,6 +58,7 @@ exports.createFarmer = async (req, res) => {
     }
 
     const farmer = await farmerRepository.createFarmer({ name, desa, dusun, rt, rw, whatsappPhone });
+    await dashboardSyncService.pushFarmerUpsert(farmer);
 
     return res.status(201).json({
       success: true,
@@ -92,6 +94,7 @@ exports.updateFarmer = async (req, res) => {
     }
 
     const farmer = await farmerRepository.updateFarmer(req.params.id, updateData);
+    await dashboardSyncService.pushFarmerUpsert(farmer);
 
     return res.status(200).json({
       success: true,
@@ -117,6 +120,7 @@ exports.updateFarmer = async (req, res) => {
 exports.deleteFarmer = async (req, res) => {
   try {
     await farmerRepository.deleteFarmer(req.params.id);
+    await dashboardSyncService.pushFarmerDelete(req.params.id);
     return res.status(200).json({ success: true, message: 'Peternak berhasil dihapus.' });
   } catch (error) {
     if (error.code === 'P2025') {

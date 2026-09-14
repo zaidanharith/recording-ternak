@@ -39,6 +39,11 @@ const config = {
     googleClientId: process.env.GOOGLE_CLIENT_ID,
   },
 
+  dashboard: {
+    apiUrl: process.env.DASHBOARD_API_URL,
+    internalApiKey: process.env.INTERNAL_API_KEY,
+  },
+
   dataSchema: {
     // Kolom sheet Recording
     recording: [

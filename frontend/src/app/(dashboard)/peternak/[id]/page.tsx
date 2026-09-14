@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatHistory } from "@/features/chat/components/chat-history";
 import { FarmerFormDialog } from "@/features/farmers/components/farmer-form-dialog";
+import { BeritaAcaraDialog } from "@/features/goats/components/berita-acara-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { canManageData } from "@/lib/rbac";
 import {
@@ -161,16 +162,21 @@ export default function FarmerDetailPage({
           ) : (
             <div className="flex flex-col gap-2">
               {farmer.goats.map((goat) => (
-                <Link
+                <div
                   key={goat.id}
-                  href={`/kambing?farmerId=${farmer.id}`}
-                  className="flex items-center justify-between rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border px-4 py-2 text-sm"
                 >
-                  <span className="font-medium">No. Telinga {goat.earTagNumber}</span>
-                  <Badge variant="secondary">
-                    {new Date(goat.createdAt).toLocaleDateString("id-ID")}
-                  </Badge>
-                </Link>
+                  <Link
+                    href={`/kambing?farmerId=${farmer.id}`}
+                    className="flex flex-1 items-center justify-between hover:underline"
+                  >
+                    <span className="font-medium">No. Telinga {goat.earTagNumber}</span>
+                    <Badge variant="secondary" className="mr-2">
+                      {new Date(goat.createdAt).toLocaleDateString("id-ID")}
+                    </Badge>
+                  </Link>
+                  {canManage && <BeritaAcaraDialog goat={{ ...goat, farmerId: farmer.id }} />}
+                </div>
               ))}
             </div>
           )}

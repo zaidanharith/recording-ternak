@@ -11,6 +11,7 @@ const dashboardRoutes = require('./dashboard.route');
 const syncRoutes = require('./sync.route');
 const webhookRoutes = require('./webhook.route');
 const uploadsRoutes = require('./uploads.route');
+const kematianRoutes = require('./kematian.route');
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -26,6 +27,7 @@ router.get('/', (req, res) => {
       sync: '/api/sync',
       webhook: '/api/webhook',
       uploads: '/api/uploads',
+      kematian: '/api/kematian',
     },
   });
 });
@@ -40,5 +42,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/sync', syncRoutes);
 router.use('/webhook', webhookRoutes);
 router.use('/uploads', uploadsRoutes);
+router.use('/kematian', kematianRoutes);
 
 module.exports = router;
