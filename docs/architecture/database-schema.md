@@ -105,3 +105,9 @@ erDiagram
 - **`SyncStatus`** always has a single row with `id: "singleton"`, upserted rather than inserted, so the dashboard can read sync health without a scan.
 
 See [`database/prisma.md`](../database/prisma.md) for query conventions and [`database/migration.md`](../database/migration.md) for how schema changes are applied.
+
+## Cross-App Notes
+
+- **`Admin` is the shared users table** for both this app and dashboard-kematian-ternak — no schema change was needed to merge them, `Admin` already had every field dashboard's local `User` model had. See [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md).
+- **`Farmer` has a counterpart table in dashboard's database (`Peternak`), kept in sync.** A `Farmer.id` always matches the `Peternak.id` for the same person in the other database — there's no separate mapping table, the shared UUID *is* the correlation key. dashboard's `Peternak` has extra fields (`nik`) this app never collects; those stay `null` when the row originates here.
+- **Goats provisioned from here into dashboard's `Ternak` table are always jenis `"Kambing"`.** dashboard's `Ternak.kodeTernak` is set to `String(Goat.earTagNumber)`. `Ternak.jenisKelamin`/`tanggalLahir` may be `null` if a goat was provisioned via the kematian flow without those fields yet supplied — see [`api/kematian.md`](../api/kematian.md).

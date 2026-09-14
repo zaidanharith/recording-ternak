@@ -22,6 +22,11 @@ All backend configuration is loaded via `dotenv` in `backend/src/server.js` / `b
 | `JWT_SECRET` | Signs/verifies dashboard auth tokens | Any long random string; falls back to an insecure development default if unset — **must** be set in production |
 | `GOOGLE_CLIENT_ID` | Verifies Google Sign-In ID tokens (`auth.controller.js`) | Google Cloud Console → OAuth 2.0 Client IDs (Web application) |
 | `GOOGLE_CREDENTIALS` | Google Sheets service-account credentials as a JSON string, used in production/Vercel where a credentials file can't be committed (`sheets.service.js`) | Paste the full contents of your downloaded service-account JSON key |
+| `DASHBOARD_GOOGLE_CLIENT_ID` | Second accepted audience for Google Sign-In verification — dashboard-kematian-ternak's frontend Client ID (auth is centralized here for both apps) | dashboard-kematian-ternak's own `GOOGLE_CLIENT_ID`/`NEXT_PUBLIC_GOOGLE_CLIENT_ID` |
+| `DASHBOARD_API_URL` | Base URL of dashboard-kematian-ternak's backend, used by every `/api/kematian`, `/api/kelahiran`, and Peternak-sync call (`dashboard-client.js`) | The deployed backend URL (or `http://localhost:<port>` locally) |
+| `INTERNAL_API_KEY` | Shared secret for service-to-service calls with dashboard-kematian-ternak (sent as `x-internal-key`, checked on incoming `/internal/*` requests) | Any long random string — **must be identical** in both apps' env |
+
+See [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md) for why these exist.
 
 ## Local vs. production credential loading for Sheets
 

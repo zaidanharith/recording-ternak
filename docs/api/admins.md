@@ -2,6 +2,8 @@
 
 Base path: `/api/admins`. All endpoints require `Authorization: Bearer <token>` **and** role `SUPERADMIN` (`router.use(authMiddleware, requireRole('SUPERADMIN'))`). This is the only way to provision new dashboard accounts — there is no public signup.
 
+> `Admin` is the shared users table for both recording-ternak **and** dashboard-kematian-ternak — dashboard's `GET`/`POST /api/users` proxy straight to `GET`/`POST /api/admins` here. See [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md).
+
 ## `GET /api/admins`
 
 List all admin accounts (passwords stripped).

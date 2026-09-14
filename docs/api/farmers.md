@@ -2,6 +2,8 @@
 
 Base path: `/api/farmers`. All endpoints require auth. Write endpoints (`POST`/`PATCH`/`DELETE`/reminder) require role `ADMIN` or `SUPERADMIN`; `GET` endpoints allow any authenticated role including `VIEWER`.
 
+> Every create/update/delete here is also pushed to dashboard-kematian-ternak's `Peternak` table (same row id on both sides) so the two apps' farmer/peternak data stays in sync. See [`api/internal.md`](internal.md) and [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md). The push is best-effort — a failed sync is logged but never blocks or rolls back the local write.
+
 ## `GET /api/farmers`
 
 Paginated, searchable list.

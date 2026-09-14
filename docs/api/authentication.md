@@ -2,6 +2,8 @@
 
 Base path: `/api/auth`. See [`backend/authentication.md`](../backend/authentication.md) for implementation detail and [`error-response.md`](error-response.md) for the response envelope.
 
+> This is now the **shared auth backend for both apps** — dashboard-kematian-ternak has no local users table; its `/api/auth/*` and `/api/users/*` proxy straight to these endpoints. See [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md).
+
 ## `POST /api/auth/login`
 
 Email + password login. No auth required.
@@ -35,7 +37,7 @@ Request:
 ```
 
 Response `200`: same shape as `/login`. Behavior:
-1. Verifies `idToken` against `GOOGLE_CLIENT_ID` via `google-auth-library`.
+1. Verifies `idToken` against **either** `GOOGLE_CLIENT_ID` (this app's own OAuth client) **or** `DASHBOARD_GOOGLE_CLIENT_ID` (dashboard-kematian-ternak's) via `google-auth-library` — both frontends keep their own Google OAuth client, but verification is centralized here, so both audiences must be accepted.
 2. Looks up admin by `googleId`; if not found, falls back to lookup by `email` and links `googleId` to that account.
 3. If no matching admin exists at all → `403` ("Akun belum terdaftar. Hubungi SUPERADMIN untuk didaftarkan.").
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-14 — Integration with dashboard-kematian-ternak
+
+- Merged users: dashboard-kematian-ternak dropped its own `User` model — `Admin` here is now the shared users table for both apps, its auth/user-management endpoints proxy to `/api/auth/*`/`/api/admins`. Google Sign-In now accepts either app's OAuth Client ID as a valid audience.
+- Bidirectional Farmer ↔ Peternak sync: every create/update/delete here is pushed to dashboard's `Peternak` table (same row id), and vice versa, via new `/internal/*` endpoints (`INTERNAL_API_KEY` guarded).
+- New `POST /api/kematian/goats/:goatId/generate` and `POST /api/kelahiran/goats/:goatId/generate`: provision the goat as a Ternak (always jenis `"Kambing"`) in dashboard's database, create the death/birth report, and return the generated berita acara / akta kelahiran document — no document generation logic duplicated here.
+- New `Laporan Kematian` and `Laporan Kelahiran` management pages: list, view, edit, delete, and re-download documents for every Kambing report, proxied to dashboard's API.
+- See [ADR-006](decisions/adr-006-integration-with-dashboard-kematian-ternak.md), [`api/kematian.md`](api/kematian.md), [`api/kelahiran.md`](api/kelahiran.md), [`api/internal.md`](api/internal.md).
+
 ## 2026-07-08
 
 Initial documentation snapshot of the Recording Ternak system as of this date. Notable state at time of writing:

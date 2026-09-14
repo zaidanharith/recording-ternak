@@ -60,6 +60,19 @@ Detail lengkap tiap komponen dan diagram sequence ada di [`docs/architecture/`](
 6. **Upload Foto (Cloudinary):** Foto kondisi kambing yang dikirim lewat WhatsApp otomatis diunggah dan ditautkan ke recording terkait.
 7. **Serverless Architecture (Vercel Ready):** Backend dan frontend berjalan sebagai *Serverless Functions*/edge di Vercel, aktif 24 jam tanpa perlu laptop menyala.
 8. **Skema Fleksibel:** Kolom data dan instruksi ekstraksi AI dikonfigurasi terpusat di `backend/src/config/index.js` sehingga mudah ditambah/dikurangi sesuai hasil observasi lapangan terbaru.
+9. **Generate Berita Acara Kematian & Akta Kelahiran:** Terintegrasi dengan aplikasi sibling [dashboard-kematian-ternak](#-integrasi-dengan-dashboard-kematian-ternak) — tabel users digabung, data peternak sinkron dua arah, dan kambing di sini bisa langsung dibuatkan dokumen resmi kematian/kelahiran tanpa membuka aplikasi lain.
+
+---
+
+## 🔗 Integrasi dengan dashboard-kematian-ternak
+
+Aplikasi ini terhubung ke aplikasi sibling **dashboard-kematian-ternak** (registrasi kematian/kelahiran ternak seluruh desa, tidak hanya kambing) lewat HTTP, bukan database bersama — masing-masing tetap punya database Postgres sendiri. Tiga hal yang melintasi batas aplikasi:
+
+1. **Users digabung** — tabel `admin` di sini jadi satu-satunya sumber akun untuk kedua aplikasi; dashboard-kematian-ternak tidak lagi punya tabel user sendiri, endpoint auth/user-nya meneruskan ke `/api/auth` dan `/api/admins` di sini.
+2. **Peternak sinkron dua arah** — `Farmer` di sini dan `Peternak` di sana adalah tabel terpisah yang disinkronkan (id baris sama) tiap kali salah satu diubah.
+3. **Generate dokumen** — `POST /api/kematian/goats/:goatId/generate` dan `POST /api/kelahiran/goats/:goatId/generate` memanggil API dashboard-kematian-ternak untuk mendaftarkan ternak (selalu jenis Kambing), membuat laporan, dan mengembalikan dokumen `.docx`/`.pdf` yang sudah jadi — logika generate dokumennya sendiri tidak diduplikasi di sini.
+
+Detail lengkap: [`docs/decisions/adr-006-integration-with-dashboard-kematian-ternak.md`](./docs/decisions/adr-006-integration-with-dashboard-kematian-ternak.md), [`docs/api/kematian.md`](./docs/api/kematian.md), [`docs/api/kelahiran.md`](./docs/api/kelahiran.md), [`docs/api/internal.md`](./docs/api/internal.md).
 
 ---
 
@@ -82,6 +95,9 @@ Salin `backend/.env.example` menjadi `backend/.env`, lalu lengkapi variabel beri
 | `JWT_SECRET` | Secret untuk menandatangani token JWT dashboard |
 | `GOOGLE_CLIENT_ID` | Client ID untuk login "Sign in with Google" di dashboard |
 | `GOOGLE_CREDENTIALS` *(khusus deploy Vercel)* | Isi JSON service account Google Sheets sebagai satu baris string env var |
+| `DASHBOARD_GOOGLE_CLIENT_ID` | Client ID Google OAuth milik dashboard-kematian-ternak — diterima juga sebagai audience login Google (lihat [integrasi](#-integrasi-dengan-dashboard-kematian-ternak)) |
+| `DASHBOARD_API_URL` | Base URL backend dashboard-kematian-ternak |
+| `INTERNAL_API_KEY` | Secret bersama untuk komunikasi antar backend — **harus sama persis** di kedua aplikasi |
 
 Untuk kredensial Google Sheets di lokal, gunakan berkas `google-credentials.json` (lihat langkah di bawah) alih-alih env var `GOOGLE_CREDENTIALS`.
 
@@ -178,7 +194,7 @@ Panduan lengkap ada di [`docs/setup/troubleshooting.md`](./docs/setup/troublesho
 ## 📚 Dokumentasi Lengkap
 
 - [`docs/architecture/`](./docs/architecture) — desain sistem, struktur folder, skema database, alur API
-- [`docs/api/`](./docs/api) — daftar endpoint per resource (auth, farmers, goats, recordings, dll)
+- [`docs/api/`](./docs/api) — daftar endpoint per resource (auth, farmers, goats, recordings, kematian, kelahiran, internal, dll)
 - [`docs/setup/`](./docs/setup) — instalasi, environment variables, deployment, troubleshooting
 - [`docs/frontend/`](./docs/frontend) — design system, komponen, routing, state management
 - [`docs/backend/`](./docs/backend) — coding standards, validasi, autentikasi

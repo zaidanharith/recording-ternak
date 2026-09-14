@@ -49,6 +49,28 @@ Sessions expire after 10 minutes (`session.service.js`). See [`api-flow.md`](api
 
 Every saved report triggers an async, non-blocking `verifySheetsConsistency()` call (`sync.service.js`) that compares row counts between Postgres and each Sheets tab. On mismatch, it runs a full sync (`runFullSync`) that clears and rewrites all three sheets from the database. This keeps Sheets as a best-effort mirror without making the farmer's reply wait on Sheets API latency. Admins can also trigger this manually via `POST /api/sync/retry` (see [`api/sync.md`](../api/sync.md)).
 
+## Cross-App Integration: dashboard-kematian-ternak
+
+Recording Ternak's backend also acts as the **shared auth service and a client** of a separate sibling app, dashboard-kematian-ternak (death/birth report registry for all village livestock, not just goats). Three things cross the app boundary:
+
+1. **Users.** The `admin` table here is the merged users table for both apps — dashboard has no local users, its auth/user-management endpoints proxy here.
+2. **Farmers ↔ Peternak.** `Farmer` here and `Peternak` there are separate tables, kept in sync (same row id) by pushing every create/update/delete to the other app's `/internal/*` endpoints.
+3. **Kematian/kelahiran generation.** `POST /api/kematian/goats/:goatId/generate` and `POST /api/kelahiran/goats/:goatId/generate` call dashboard's API to provision a `Ternak` (always jenis `"Kambing"`), create the report, and stream back the generated document — no document logic lives here.
+
+```mermaid
+flowchart LR
+    RTBackend["recording-ternak Backend"]
+    DashBackend["dashboard-kematian-ternak Backend"]
+
+    RTBackend -- "auth proxy (login, /api/admins)" --> DashBackend
+    DashBackend -. "/api/auth, /api/users" .-> RTBackend
+    RTBackend -- "PUT/DELETE /internal/peternak/:id" --> DashBackend
+    DashBackend -- "PUT/DELETE /internal/farmers/:id" --> RTBackend
+    RTBackend -- "/api/ternak/provision, /api/laporan-kematian, /api/laporan-kelahiran" --> DashBackend
+```
+
+See [ADR-006](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md) for why this is HTTP-to-HTTP rather than a shared database, [`api/kematian.md`](../api/kematian.md), [`api/kelahiran.md`](../api/kelahiran.md), and [`api/internal.md`](../api/internal.md).
+
 ## Related docs
 
 - [Folder structure](folder-structure.md)
@@ -56,3 +78,4 @@ Every saved report triggers an async, non-blocking `verifySheetsConsistency()` c
 - [API request flow](api-flow.md)
 - [ADR-003: Gemini AI for NLP parsing](../decisions/adr-003-gemini-ai-parsing.md)
 - [ADR-004: Google Sheets as stakeholder mirror](../decisions/adr-004-google-sheets-sync.md)
+- [ADR-006: Integration with dashboard-kematian-ternak](../decisions/adr-006-integration-with-dashboard-kematian-ternak.md)
