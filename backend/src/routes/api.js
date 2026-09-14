@@ -12,6 +12,7 @@ const syncRoutes = require('./sync.route');
 const webhookRoutes = require('./webhook.route');
 const uploadsRoutes = require('./uploads.route');
 const kematianRoutes = require('./kematian.route');
+const kelahiranRoutes = require('./kelahiran.route');
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -28,6 +29,7 @@ router.get('/', (req, res) => {
       webhook: '/api/webhook',
       uploads: '/api/uploads',
       kematian: '/api/kematian',
+      kelahiran: '/api/kelahiran',
     },
   });
 });
@@ -43,5 +45,6 @@ router.use('/sync', syncRoutes);
 router.use('/webhook', webhookRoutes);
 router.use('/uploads', uploadsRoutes);
 router.use('/kematian', kematianRoutes);
+router.use('/kelahiran', kelahiranRoutes);
 
 module.exports = router;

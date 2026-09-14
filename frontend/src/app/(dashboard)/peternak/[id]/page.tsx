@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatHistory } from "@/features/chat/components/chat-history";
 import { FarmerFormDialog } from "@/features/farmers/components/farmer-form-dialog";
+import { AktaKelahiranDialog } from "@/features/goats/components/akta-kelahiran-dialog";
 import { BeritaAcaraDialog } from "@/features/goats/components/berita-acara-dialog";
 import { useAsync } from "@/hooks/use-async";
 import { canManageData } from "@/lib/rbac";
@@ -175,7 +176,12 @@ export default function FarmerDetailPage({
                       {new Date(goat.createdAt).toLocaleDateString("id-ID")}
                     </Badge>
                   </Link>
-                  {canManage && <BeritaAcaraDialog goat={{ ...goat, farmerId: farmer.id }} />}
+                  {canManage && (
+                    <div className="flex gap-2">
+                      <AktaKelahiranDialog goat={{ ...goat, farmerId: farmer.id }} />
+                      <BeritaAcaraDialog goat={{ ...goat, farmerId: farmer.id }} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

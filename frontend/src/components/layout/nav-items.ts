@@ -4,6 +4,7 @@ import {
   FiFileText,
   FiHome,
   FiSettings,
+  FiSunrise,
   FiTag,
   FiUsers,
 } from "react-icons/fi";
@@ -24,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Kambing", href: "/kambing", icon: FiTag },
   { label: "Recording", href: "/recording", icon: FiClipboard },
   { label: "Laporan Kematian", href: "/laporan-kematian", icon: FiFileText },
+  { label: "Laporan Kelahiran", href: "/laporan-kelahiran", icon: FiSunrise },
   {
     label: "Follow-up",
     href: "/follow-up",
