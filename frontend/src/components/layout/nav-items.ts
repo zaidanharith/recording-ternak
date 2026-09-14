@@ -1,6 +1,7 @@
 import {
   FiBell,
   FiClipboard,
+  FiFileText,
   FiHome,
   FiSettings,
   FiTag,
@@ -22,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Peternak", href: "/peternak", icon: FiUsers },
   { label: "Kambing", href: "/kambing", icon: FiTag },
   { label: "Recording", href: "/recording", icon: FiClipboard },
+  { label: "Laporan Kematian", href: "/laporan-kematian", icon: FiFileText },
   {
     label: "Follow-up",
     href: "/follow-up",

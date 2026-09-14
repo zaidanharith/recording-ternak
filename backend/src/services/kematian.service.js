@@ -50,9 +50,41 @@ async function getBeritaAcaraFile(laporanId, format, token) {
   };
 }
 
+/**
+ * Daftar laporan kematian, dipersempit ke ternak jenis Kambing saja —
+ * dashboard-kematian-ternak mencatat kematian segala jenis ternak, tapi
+ * recording-ternak cuma urusan kambing.
+ */
+async function listLaporanKematian(token) {
+  const { payload } = await dashboardFetch('/api/laporan-kematian', { token });
+  return payload.data.laporanKematian.filter((laporan) => laporan.ternak.jenisTernak.nama === JENIS_TERNAK_KAMBING);
+}
+
+async function getLaporanKematianById(id, token) {
+  const { payload } = await dashboardFetch(`/api/laporan-kematian/${id}`, { token });
+  return payload.data.laporan;
+}
+
+async function updateLaporanKematian(id, { penyebabKematianId, tanggalKematian, catatan }, token) {
+  const { payload } = await dashboardFetch(`/api/laporan-kematian/${id}`, {
+    method: 'PATCH',
+    token,
+    body: { penyebabKematianId, tanggalKematian, catatan },
+  });
+  return payload.data.laporan;
+}
+
+async function deleteLaporanKematian(id, token) {
+  await dashboardFetch(`/api/laporan-kematian/${id}`, { method: 'DELETE', token });
+}
+
 module.exports = {
   getPenyebabKematianOptions,
   provisionTernak,
   createLaporanKematian,
   getBeritaAcaraFile,
+  listLaporanKematian,
+  getLaporanKematianById,
+  updateLaporanKematian,
+  deleteLaporanKematian,
 };
