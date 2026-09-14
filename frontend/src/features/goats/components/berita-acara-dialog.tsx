@@ -108,7 +108,7 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
           trigger ?? (
             <Button variant="outline" size="sm">
               <FiFileText className="size-4" />
-              Berita Acara Kematian
+              Tambah Laporan Kematian
             </Button>
           )
         }

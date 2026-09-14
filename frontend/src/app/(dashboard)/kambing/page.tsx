@@ -158,7 +158,7 @@ function KambingPageContent() {
                         <AktaKelahiranDialog
                           goat={goat}
                           trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Akta Kelahiran">
+                            <Button variant="ghost" size="icon-sm" aria-label="Tambah Laporan Kelahiran">
                               <FiSunrise className="size-3.5" />
                             </Button>
                           }
@@ -166,7 +166,7 @@ function KambingPageContent() {
                         <BeritaAcaraDialog
                           goat={goat}
                           trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Berita Acara Kematian">
+                            <Button variant="ghost" size="icon-sm" aria-label="Tambah Laporan Kematian">
                               <FiFileText className="size-3.5" />
                             </Button>
                           }

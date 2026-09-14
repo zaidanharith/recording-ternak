@@ -95,7 +95,7 @@ export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranD
           trigger ?? (
             <Button variant="outline" size="sm">
               <FiSunrise className="size-4" />
-              Akta Kelahiran
+              Tambah Laporan Kelahiran
             </Button>
           )
         }
