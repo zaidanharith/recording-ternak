@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FiEdit2, FiTrash2, FiX } from "react-icons/fi";
+import { FiEdit2, FiFileText, FiSunrise, FiTrash2, FiX } from "react-icons/fi";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
@@ -21,6 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AktaKelahiranDialog } from "@/features/goats/components/akta-kelahiran-dialog";
+import { BeritaAcaraDialog } from "@/features/goats/components/berita-acara-dialog";
 import { GoatExportDialog } from "@/features/goats/components/goat-export-dialog";
 import { GoatFormDialog } from "@/features/goats/components/goat-form-dialog";
 import { useAsync } from "@/hooks/use-async";
@@ -153,6 +155,22 @@ function KambingPageContent() {
                   <TableCell>
                     {canManage && (
                       <div className="flex justify-end gap-1">
+                        <AktaKelahiranDialog
+                          goat={goat}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm" aria-label="Akta Kelahiran">
+                              <FiSunrise className="size-3.5" />
+                            </Button>
+                          }
+                        />
+                        <BeritaAcaraDialog
+                          goat={goat}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm" aria-label="Berita Acara Kematian">
+                              <FiFileText className="size-3.5" />
+                            </Button>
+                          }
+                        />
                         <GoatFormDialog
                           goat={goat}
                           onSaved={() => refetch()}
