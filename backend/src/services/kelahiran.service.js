@@ -24,7 +24,10 @@ async function createLaporanKelahiran({ goat, jenisKelamin, tanggalLahir, rasRum
     catatan,
   });
 
-  await dashboardSyncService.pushLaporanKelahiranUpsert(laporan, laporan.goat);
+  // Best-effort, tidak boleh menahan response (lihat catatan di dashboard-sync.service.js) —
+  // sengaja tidak di-await supaya dashboard yang lambat/unreachable tidak ikut membuat
+  // generate akta kelahiran gagal padahal laporannya sendiri sudah tersimpan.
+  dashboardSyncService.pushLaporanKelahiranUpsert(laporan, laporan.goat);
 
   return laporan;
 }

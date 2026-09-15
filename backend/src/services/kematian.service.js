@@ -49,7 +49,10 @@ async function createLaporanKematian({ goat, penyebabKematianId, tanggalKematian
     catatan,
   });
 
-  await dashboardSyncService.pushLaporanKematianUpsert(laporan, laporan.goat, penyebabKematian.nama);
+  // Best-effort, tidak boleh menahan response (lihat catatan di dashboard-sync.service.js) —
+  // sengaja tidak di-await supaya dashboard yang lambat/unreachable tidak ikut membuat
+  // generate berita acara gagal padahal laporannya sendiri sudah tersimpan.
+  dashboardSyncService.pushLaporanKematianUpsert(laporan, laporan.goat, penyebabKematian.nama);
 
   return laporan;
 }
