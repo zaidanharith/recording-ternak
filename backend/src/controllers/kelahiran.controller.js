@@ -25,7 +25,16 @@ exports.generateAktaKelahiran = async (req, res) => {
       { id: req.user.id, name: req.user.name },
     );
 
-    const file = await kelahiranService.getAktaFile(laporan.id, format);
+    let file;
+    try {
+      file = await kelahiranService.getAktaFile(laporan.id, format);
+    } catch (fileError) {
+      // Laporan sudah tersimpan di createLaporanKelahiran di atas — kalau pembuatan
+      // filenya gagal, batalkan lagi supaya goatId (unique) tidak nyangkut dan bisa
+      // dicoba ulang.
+      await kelahiranService.deleteLaporanKelahiran(laporan.id);
+      throw fileError;
+    }
 
     res.setHeader('Content-Type', file.contentType);
     res.setHeader('Content-Disposition', file.contentDisposition);

@@ -17,7 +17,18 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // Requests made with responseType: "blob" (file downloads) still get their
+    // error body typed as a Blob, so error.response.data.message is unreadable
+    // unless we parse it back out here — otherwise every failure looks generic.
+    if (error.response?.data instanceof Blob && error.response.data.type.includes("json")) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text());
+      } catch {
+        // leave error.response.data as-is if it wasn't actually JSON
+      }
+    }
+
     if (
       typeof window !== "undefined" &&
       error.response?.status === 401 &&

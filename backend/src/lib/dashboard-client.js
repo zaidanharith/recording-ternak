@@ -16,11 +16,23 @@ async function dashboardFetch(path, { method = 'GET', body, token } = {}) {
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${config.dashboard.apiUrl}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  // Tanpa timeout, dashboard yang lambat/unreachable bisa menggantung request ini
+  // sampai kena batas waktu function serverless-nya — padahal caller (mis. generate
+  // berita acara/akta) sudah menganggap sync ini best-effort dan tidak boleh blocking.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  let response;
+  try {
+    response = await fetch(`${config.dashboard.apiUrl}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const isJson = response.headers.get('content-type')?.includes('application/json');
   const payload = isJson ? await response.json() : await response.arrayBuffer();

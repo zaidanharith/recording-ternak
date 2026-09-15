@@ -36,7 +36,16 @@ exports.generateBeritaAcara = async (req, res) => {
       req.user.id,
     );
 
-    const file = await kematianService.getBeritaAcaraFile(laporan.id, format);
+    let file;
+    try {
+      file = await kematianService.getBeritaAcaraFile(laporan.id, format);
+    } catch (fileError) {
+      // Laporan + status kambing sudah tersimpan di createLaporanKematian di atas — kalau
+      // pembuatan filenya gagal, batalkan lagi supaya kambing tidak nyangkut sebagai
+      // "sudah mati" tanpa berita acara yang pernah berhasil dibuat.
+      await kematianService.deleteLaporanKematian(laporan.id);
+      throw fileError;
+    }
 
     res.setHeader('Content-Type', file.contentType);
     res.setHeader('Content-Disposition', file.contentDisposition);
