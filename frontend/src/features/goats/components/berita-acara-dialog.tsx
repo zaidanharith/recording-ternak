@@ -216,64 +216,68 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
             />
 
             {needsGoatDetails && (
-              <p className="text-xs text-muted-foreground">
-                Kambing ini belum punya data jenis kelamin/tanggal lahir tersimpan —
-                lengkapi di bawah ini sebelum melanjutkan.
-              </p>
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Kambing ini belum punya data jenis kelamin/tanggal lahir tersimpan —
+                  lengkapi di bawah ini sebelum melanjutkan.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="jenisKelamin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required={needsJenisKelamin}>Jenis Kelamin</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) =>
+                              field.onChange(value as "JANTAN" | "BETINA")
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Pilih" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="JANTAN">Jantan</SelectItem>
+                              <SelectItem value="BETINA">Betina</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tanggalLahir"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required={needsTanggalLahir}>Tanggal Lahir</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="rasRumpun"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ras/Rumpun</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="jenisKelamin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required={needsJenisKelamin}>Jenis Kelamin</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) =>
-                          field.onChange(value as "JANTAN" | "BETINA")
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="JANTAN">Jantan</SelectItem>
-                          <SelectItem value="BETINA">Betina</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tanggalLahir"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required={needsTanggalLahir}>Tanggal Lahir</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="rasRumpun"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ras/Rumpun</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="format"

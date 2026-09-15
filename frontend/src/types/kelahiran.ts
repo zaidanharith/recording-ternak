@@ -1,6 +1,6 @@
 export interface GenerateAktaKelahiranInput {
-  jenisKelamin: "JANTAN" | "BETINA";
-  tanggalLahir: string;
+  jenisKelamin?: "JANTAN" | "BETINA";
+  tanggalLahir?: string;
   rasRumpun?: string;
   catatan?: string;
   format?: "docx" | "pdf";

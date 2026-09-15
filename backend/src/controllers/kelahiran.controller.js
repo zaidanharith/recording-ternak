@@ -10,7 +10,10 @@ exports.generateAktaKelahiran = async (req, res) => {
 
     const { jenisKelamin, tanggalLahir, rasRumpun, catatan, format } = req.body;
 
-    if (!jenisKelamin || !tanggalLahir) {
+    const resolvedJenisKelamin = goat.jenisKelamin || jenisKelamin;
+    const resolvedTanggalLahir = goat.birthDate || tanggalLahir;
+
+    if (!resolvedJenisKelamin || !resolvedTanggalLahir) {
       return res.status(400).json({
         success: false,
         message: 'jenisKelamin dan tanggalLahir wajib diisi.',
@@ -18,7 +21,7 @@ exports.generateAktaKelahiran = async (req, res) => {
     }
 
     const laporan = await kelahiranService.createLaporanKelahiran(
-      { goat, jenisKelamin, tanggalLahir, rasRumpun, catatan },
+      { goat, jenisKelamin: resolvedJenisKelamin, tanggalLahir: resolvedTanggalLahir, rasRumpun, catatan },
       { id: req.user.id, name: req.user.name },
     );
 

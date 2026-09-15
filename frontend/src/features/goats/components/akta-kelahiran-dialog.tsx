@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -36,13 +36,14 @@ import {
 } from "@/components/ui/form";
 import { GoatSelect } from "@/features/recordings/components/goat-select";
 import { downloadBlob } from "@/lib/download-file";
+import { getGoat } from "@/services/goat.service";
 import { generateAktaKelahiran } from "@/services/kelahiran.service";
 import type { Goat } from "@/types/goat";
 
 const aktaKelahiranSchema = z.object({
   goatId: z.string().min(1, "Kambing wajib dipilih"),
-  jenisKelamin: z.enum(["JANTAN", "BETINA"], { message: "Jenis kelamin wajib dipilih" }),
-  tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi"),
+  jenisKelamin: z.enum(["JANTAN", "BETINA"]).optional(),
+  tanggalLahir: z.string().optional(),
   rasRumpun: z.string().optional(),
   catatan: z.string().optional(),
   format: z.enum(["docx", "pdf"]),
@@ -58,6 +59,7 @@ interface AktaKelahiranDialogProps {
 
 export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranDialogProps) {
   const [open, setOpen] = useState(false);
+  const [pickedGoat, setPickedGoat] = useState<Goat | null>(null);
 
   const form = useForm<AktaKelahiranValues>({
     resolver: zodResolver(aktaKelahiranSchema),
@@ -71,13 +73,41 @@ export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranD
     },
   });
 
+  const goatId = form.watch("goatId");
+  useEffect(() => {
+    if (goat || !goatId) {
+      setPickedGoat(null);
+      return;
+    }
+    getGoat(goatId)
+      .then(setPickedGoat)
+      .catch(() => setPickedGoat(null));
+  }, [goat, goatId]);
+
+  const resolvedGoat = goat ?? pickedGoat;
+  const needsJenisKelamin = !resolvedGoat?.jenisKelamin;
+  const needsTanggalLahir = !resolvedGoat?.birthDate;
+  const needsGoatDetails = needsJenisKelamin || needsTanggalLahir;
+
   const onSubmit = async (values: AktaKelahiranValues) => {
+    let hasError = false;
+    if (needsJenisKelamin && !values.jenisKelamin) {
+      form.setError("jenisKelamin", { message: "Wajib diisi — kambing ini belum punya data jenis kelamin" });
+      hasError = true;
+    }
+    if (needsTanggalLahir && !values.tanggalLahir) {
+      form.setError("tanggalLahir", { message: "Wajib diisi — kambing ini belum punya data tanggal lahir" });
+      hasError = true;
+    }
+    if (hasError) return;
+
     try {
       const blob = await generateAktaKelahiran(values.goatId, values);
-      downloadBlob(blob, `akta-kelahiran-${goat?.earTagNumber ?? values.goatId}.${values.format}`);
+      downloadBlob(blob, `akta-kelahiran-${resolvedGoat?.earTagNumber ?? values.goatId}.${values.format}`);
       toast.success("Akta kelahiran berhasil dibuat.");
       setOpen(false);
       form.reset();
+      setPickedGoat(null);
       onCreated?.();
     } catch (error) {
       const message =
@@ -121,58 +151,66 @@ export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranD
                 )}
               />
             )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="jenisKelamin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required>Jenis Kelamin</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => field.onChange(value as "JANTAN" | "BETINA")}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="JANTAN">Jantan</SelectItem>
-                          <SelectItem value="BETINA">Betina</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tanggalLahir"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required>Tanggal Lahir</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="rasRumpun"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ras/Rumpun</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: Kambing Jawa" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {needsGoatDetails && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Kambing ini belum punya data jenis kelamin/tanggal lahir tersimpan —
+                  lengkapi di bawah ini sebelum melanjutkan.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="jenisKelamin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required={needsJenisKelamin}>Jenis Kelamin</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) => field.onChange(value as "JANTAN" | "BETINA")}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Pilih" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="JANTAN">Jantan</SelectItem>
+                              <SelectItem value="BETINA">Betina</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tanggalLahir"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required={needsTanggalLahir}>Tanggal Lahir</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="rasRumpun"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ras/Rumpun</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Contoh: Kambing Jawa" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
             <FormField
               control={form.control}
               name="catatan"
