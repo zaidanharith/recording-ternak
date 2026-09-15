@@ -170,7 +170,11 @@ export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranD
                             onValueChange={(value) => field.onChange(value as "JANTAN" | "BETINA")}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Pilih" />
+                              <SelectValue placeholder="Pilih">
+                                {(current: string | null) =>
+                                  current === "JANTAN" ? "Jantan" : current === "BETINA" ? "Betina" : "Pilih"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="JANTAN">Jantan</SelectItem>
@@ -233,7 +237,9 @@ export function AktaKelahiranDialog({ goat, onCreated, trigger }: AktaKelahiranD
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue />
+                        <SelectValue>
+                          {(current: string | null) => (current === "pdf" ? "PDF" : "Word (.docx)")}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="docx">Word (.docx)</SelectItem>

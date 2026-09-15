@@ -125,7 +125,11 @@ export function LaporanKematianEditDialog({ laporan, onSaved }: LaporanKematianE
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih penyebab" />
+                        <SelectValue placeholder="Pilih penyebab">
+                          {(current: string | null) =>
+                            penyebabOptions.find((option) => option.id === current)?.nama ?? "Pilih penyebab"
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {penyebabOptions.map((option) => (

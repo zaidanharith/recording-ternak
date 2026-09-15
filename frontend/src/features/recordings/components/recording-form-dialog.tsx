@@ -303,7 +303,11 @@ export function RecordingFormDialog({
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih kondisi" />
+                          <SelectValue placeholder="Pilih kondisi">
+                            {(current: string | null) =>
+                              current === "SEHAT" ? "Sehat" : current === "SAKIT" ? "Sakit" : "Pilih kondisi"
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="SEHAT">Sehat</SelectItem>
@@ -374,7 +378,11 @@ export function RecordingFormDialog({
                         }
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih status" />
+                          <SelectValue placeholder="Pilih status">
+                            {(current: string | null) =>
+                              current === "PERLU_REVIEW" ? "Perlu Review" : current === "FINAL" ? "Final" : "Pilih status"
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="PERLU_REVIEW">

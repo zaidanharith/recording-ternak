@@ -183,7 +183,15 @@ export function AdminFormDialog({ admin, onSaved, trigger }: AdminFormDialogProp
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih role" />
+                        <SelectValue placeholder="Pilih role">
+                          {(current: string | null) =>
+                            current === "ADMIN"
+                              ? "Admin (Petugas)"
+                              : current === "VIEWER"
+                                ? "Viewer (Stakeholder)"
+                                : "Pilih role"
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ADMIN">Admin (Petugas)</SelectItem>

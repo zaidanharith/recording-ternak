@@ -34,6 +34,11 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "status", label: "Status" },
 ];
 
+const STATUS_LABELS: Record<string, string> = { ALL: "Semua", PERLU_REVIEW: "Perlu Review", FINAL: "Final" };
+const SOLD_LABELS: Record<string, string> = { ALL: "Semua", YA: "Ya", TIDAK: "Tidak" };
+const CONDITION_LABELS: Record<string, string> = { ALL: "Semua", SEHAT: "Sehat", SAKIT: "Sakit" };
+const SOURCE_LABELS: Record<string, string> = { ALL: "Semua", WA: "WhatsApp", MANUAL: "Manual" };
+
 export function RecordingExportDialog() {
   const [format, setFormat] = useState<ExportFormat>("xlsx");
   const [status, setStatus] = useState<RecordingStatus | "ALL">("ALL");
@@ -84,7 +89,7 @@ export function RecordingExportDialog() {
           <Label>Status</Label>
           <Select value={status} onValueChange={(value) => setStatus(value as RecordingStatus | "ALL")}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => STATUS_LABELS[current ?? "ALL"] ?? "Semua"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Semua</SelectItem>
@@ -97,7 +102,7 @@ export function RecordingExportDialog() {
           <Label>Terjual</Label>
           <Select value={sold} onValueChange={(value) => setSold(value as SoldStatus | "ALL")}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => SOLD_LABELS[current ?? "ALL"] ?? "Semua"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Semua</SelectItem>
@@ -110,7 +115,7 @@ export function RecordingExportDialog() {
           <Label>Kondisi</Label>
           <Select value={condition} onValueChange={(value) => setCondition(value as GoatCondition | "ALL")}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => CONDITION_LABELS[current ?? "ALL"] ?? "Semua"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Semua</SelectItem>
@@ -123,7 +128,7 @@ export function RecordingExportDialog() {
           <Label>Sumber</Label>
           <Select value={source} onValueChange={(value) => setSource(value as RecordingSource | "ALL")}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => SOURCE_LABELS[current ?? "ALL"] ?? "Semua"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Semua</SelectItem>
@@ -144,7 +149,11 @@ export function RecordingExportDialog() {
           <Label>Urutkan Berdasarkan</Label>
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {(current: string | null) =>
+                  SORT_OPTIONS.find((option) => option.value === current)?.label ?? "Pilih"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.map((option) => (
@@ -159,7 +168,7 @@ export function RecordingExportDialog() {
           <Label>Arah Urutan</Label>
           <Select value={sortDir} onValueChange={(value) => setSortDir(value as SortDir)}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => (current === "desc" ? "Turun" : "Naik")}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="asc">Naik</SelectItem>

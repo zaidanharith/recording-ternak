@@ -75,7 +75,11 @@ export function GoatExportDialog() {
           <Label>Peternak</Label>
           <Select value={farmerId} onValueChange={(value) => setFarmerId(value ?? "ALL")}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {(current: string | null) =>
+                  farmersData?.farmers.find((farmer) => farmer.id === current)?.name ?? "Semua Peternak"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">Semua Peternak</SelectItem>
@@ -99,7 +103,11 @@ export function GoatExportDialog() {
           <Label>Urutkan Berdasarkan</Label>
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortBy)}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {(current: string | null) =>
+                  SORT_OPTIONS.find((option) => option.value === current)?.label ?? "Pilih"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.map((option) => (
@@ -114,7 +122,7 @@ export function GoatExportDialog() {
           <Label>Arah Urutan</Label>
           <Select value={sortDir} onValueChange={(value) => setSortDir(value as SortDir)}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{(current: string | null) => (current === "desc" ? "Turun" : "Naik")}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="asc">Naik</SelectItem>

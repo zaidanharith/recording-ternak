@@ -186,7 +186,11 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih penyebab" />
+                        <SelectValue placeholder="Pilih penyebab">
+                          {(current: string | null) =>
+                            penyebabOptions.find((option) => option.id === current)?.nama ?? "Pilih penyebab"
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {penyebabOptions.map((option) => (
@@ -236,7 +240,11 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
                             }
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Pilih" />
+                              <SelectValue placeholder="Pilih">
+                                {(current: string | null) =>
+                                  current === "JANTAN" ? "Jantan" : current === "BETINA" ? "Betina" : "Pilih"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="JANTAN">Jantan</SelectItem>
@@ -287,7 +295,9 @@ export function BeritaAcaraDialog({ goat, onCreated, trigger }: BeritaAcaraDialo
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue>
+                            {(current: string | null) => (current === "pdf" ? "PDF" : "Word (.docx)")}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="docx">Word (.docx)</SelectItem>
