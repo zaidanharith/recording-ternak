@@ -78,6 +78,7 @@ const listFarmers = async ({ search, page, limit }) => {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { whatsappPhone: { contains: search } },
+          { registrationNumber: { contains: search, mode: 'insensitive' } },
         ],
       }
     : {};
@@ -102,7 +103,7 @@ const findFarmerById = async (id) => {
   });
 };
 
-const createFarmer = async ({ name, desa, dusun, rt, rw, whatsappPhone }) => {
+const createFarmer = async ({ name, desa, dusun, rt, rw, whatsappPhone, registrationNumber }) => {
   return await prisma.farmer.create({
     data: {
       name,
@@ -111,6 +112,7 @@ const createFarmer = async ({ name, desa, dusun, rt, rw, whatsappPhone }) => {
       rt: rt || '-',
       rw: rw || '-',
       whatsappPhone,
+      registrationNumber: registrationNumber || null,
     },
   });
 };
@@ -173,6 +175,7 @@ const exportFarmers = async ({ search, sortBy, sortDir }) => {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { whatsappPhone: { contains: search } },
+          { registrationNumber: { contains: search, mode: 'insensitive' } },
         ],
       }
     : {};

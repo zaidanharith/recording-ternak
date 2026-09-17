@@ -3,13 +3,57 @@ const exportService = require('../services/export.service');
 const { EXPORT_FORMATS, SORT_DIRECTIONS } = require('../config');
 const { isValidDateString } = require('../lib/date-range');
 
+const JENIS_KELAMIN_VALUES = ['JANTAN', 'BETINA'];
+const GOAT_CONDITION_VALUES = ['SEHAT', 'SAKIT'];
+
+const GOAT_EDITABLE_FIELDS = [
+  'registrationNumber', 'jenisKelamin', 'rasRumpun', 'birthDate', 'specialTraits',
+  'origin', 'enteredAt', 'purchasePrice', 'lengthCm', 'heightCm', 'lactationCount',
+  'initialCondition', 'photoUrls', 'photoPublicIds',
+];
+
+/**
+ * Ambil field-field detail kambing dari body request (dipakai saat create & update).
+ * Validasi enum & tanggal di sini, lempar Error dengan pesan yang sudah siap ditampilkan.
+ */
+const parseGoatDetailFields = (body) => {
+  const data = {};
+  for (const field of GOAT_EDITABLE_FIELDS) {
+    if (body[field] === undefined) continue;
+    data[field] = body[field];
+  }
+
+  if (data.jenisKelamin !== undefined && data.jenisKelamin !== null && !JENIS_KELAMIN_VALUES.includes(data.jenisKelamin)) {
+    throw new Error(`jenisKelamin harus salah satu dari: ${JENIS_KELAMIN_VALUES.join(', ')}.`);
+  }
+  if (data.initialCondition !== undefined && data.initialCondition !== null && !GOAT_CONDITION_VALUES.includes(data.initialCondition)) {
+    throw new Error(`initialCondition harus salah satu dari: ${GOAT_CONDITION_VALUES.join(', ')}.`);
+  }
+  for (const dateField of ['birthDate', 'enteredAt']) {
+    if (data[dateField] === undefined) continue;
+    if (!isValidDateString(data[dateField])) {
+      throw new Error(`${dateField} harus berformat YYYY-MM-DD.`);
+    }
+    data[dateField] = new Date(data[dateField]);
+  }
+
+  return data;
+};
+
+const isGoatValidationError = (error) =>
+  error.message === 'Nomor telinga harus berupa angka bulat' ||
+  error.message.startsWith('jenisKelamin harus') ||
+  error.message.startsWith('initialCondition harus') ||
+  error.message.endsWith('harus berformat YYYY-MM-DD.');
+
 exports.listGoats = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const farmerId = req.query.farmerId || undefined;
+    const search = req.query.search || undefined;
 
-    const { goats, total } = await goatRepository.listGoats({ farmerId, page, limit });
+    const { goats, total } = await goatRepository.listGoats({ farmerId, search, page, limit });
 
     return res.status(200).json({
       success: true,
@@ -67,7 +111,8 @@ exports.createGoat = async (req, res) => {
       });
     }
 
-    const goat = await goatRepository.createGoat({ earTagNumber, farmerId });
+    const detailFields = parseGoatDetailFields(req.body);
+    const goat = await goatRepository.createGoat({ earTagNumber, farmerId, ...detailFields });
 
     return res.status(201).json({
       success: true,
@@ -76,12 +121,16 @@ exports.createGoat = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Nomor telinga sudah digunakan.' });
+      const target = error.meta?.target ?? '';
+      const message = String(target).includes('registration_number')
+        ? 'Nomor registrasi sudah digunakan.'
+        : 'Nomor telinga sudah digunakan.';
+      return res.status(409).json({ success: false, message });
     }
     if (error.code === 'P2003') {
       return res.status(400).json({ success: false, message: 'Peternak tidak ditemukan.' });
     }
-    if (error.message === 'Nomor telinga harus berupa angka bulat') {
+    if (isGoatValidationError(error)) {
       return res.status(400).json({ success: false, message: error.message });
     }
     console.error('Create Goat Error:', error);
@@ -96,7 +145,7 @@ exports.createGoat = async (req, res) => {
 exports.updateGoat = async (req, res) => {
   try {
     const { earTagNumber, farmerId } = req.body;
-    const updateData = {};
+    const updateData = parseGoatDetailFields(req.body);
     if (earTagNumber) updateData.earTagNumber = goatRepository.parseEarTagNumber(earTagNumber);
     if (farmerId) updateData.farmerId = farmerId;
 
@@ -113,12 +162,16 @@ exports.updateGoat = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Nomor telinga sudah digunakan.' });
+      const target = error.meta?.target ?? '';
+      const message = String(target).includes('registration_number')
+        ? 'Nomor registrasi sudah digunakan.'
+        : 'Nomor telinga sudah digunakan.';
+      return res.status(409).json({ success: false, message });
     }
     if (error.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Kambing tidak ditemukan.' });
     }
-    if (error.message === 'Nomor telinga harus berupa angka bulat') {
+    if (isGoatValidationError(error)) {
       return res.status(400).json({ success: false, message: error.message });
     }
     console.error('Update Goat Error:', error);

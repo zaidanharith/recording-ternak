@@ -10,37 +10,37 @@ jest.mock('../../lib/prisma', () => ({
 const { createManualRecording } = require('../recording.repository');
 
 describe('createManualRecording', () => {
-  it('persists photoUrl and photoPublicId when provided', async () => {
+  it('persists photoUrls and photoPublicIds when provided', async () => {
     prisma.recording.create.mockResolvedValue({ id: 'r1' });
 
     await createManualRecording({
       goatId: 'g1',
       senderName: 'Admin Satu',
-      photoUrl: 'https://res.cloudinary.com/demo/x.jpg',
-      photoPublicId: 'recording-ternak/dashboard/x',
+      photoUrls: ['https://res.cloudinary.com/demo/x.jpg'],
+      photoPublicIds: ['recording-ternak/dashboard/x'],
     });
 
     expect(prisma.recording.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        photoUrl: 'https://res.cloudinary.com/demo/x.jpg',
-        photoPublicId: 'recording-ternak/dashboard/x',
+        photoUrls: ['https://res.cloudinary.com/demo/x.jpg'],
+        photoPublicIds: ['recording-ternak/dashboard/x'],
       }),
     });
   });
 
-  it('defaults photoPublicId to null when not provided', async () => {
+  it('defaults photo fields to empty arrays when not provided', async () => {
     prisma.recording.create.mockResolvedValue({ id: 'r1' });
 
     await createManualRecording({ goatId: 'g1', senderName: 'Admin Satu' });
 
     expect(prisma.recording.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ photoPublicId: null }),
+      data: expect.objectContaining({ photoUrls: [], photoPublicIds: [] }),
     });
   });
 });
 
 describe('createRecording', () => {
-  it('persists photoUrl and photoPublicId when provided', async () => {
+  it('wraps photoUrl and photoPublicId into single-element arrays when provided', async () => {
     prisma.recording.create.mockResolvedValue({ id: 'r1' });
 
     const { createRecording } = require('../recording.repository');
@@ -53,20 +53,20 @@ describe('createRecording', () => {
 
     expect(prisma.recording.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        photoUrl: 'https://res.cloudinary.com/demo/wa.jpg',
-        photoPublicId: 'recording-ternak/whatsapp/wa',
+        photoUrls: ['https://res.cloudinary.com/demo/wa.jpg'],
+        photoPublicIds: ['recording-ternak/whatsapp/wa'],
       }),
     });
   });
 
-  it('defaults photo fields to null when not provided', async () => {
+  it('defaults photo fields to empty arrays when not provided', async () => {
     prisma.recording.create.mockResolvedValue({ id: 'r1' });
 
     const { createRecording } = require('../recording.repository');
     await createRecording({ kambingId: 'g1', pengirim: 'Budi' });
 
     expect(prisma.recording.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ photoUrl: null, photoPublicId: null }),
+      data: expect.objectContaining({ photoUrls: [], photoPublicIds: [] }),
     });
   });
 });

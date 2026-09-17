@@ -21,6 +21,7 @@ describe('exportFarmers', () => {
           OR: [
             { name: { contains: 'budi', mode: 'insensitive' } },
             { whatsappPhone: { contains: 'budi' } },
+            { registrationNumber: { contains: 'budi', mode: 'insensitive' } },
           ],
         },
         orderBy: { name: 'asc' },

@@ -8,6 +8,7 @@ export interface Farmer {
   rt: string;
   rw: string;
   whatsappPhone: string;
+  registrationNumber: string | null;
   createdAt: string;
   updatedAt: string;
   goats?: Goat[];
@@ -20,6 +21,7 @@ export interface CreateFarmerInput {
   rt?: string;
   rw?: string;
   whatsappPhone: string;
+  registrationNumber?: string;
 }
 
 export interface UpdateFarmerInput {
@@ -29,6 +31,7 @@ export interface UpdateFarmerInput {
   rt?: string;
   rw?: string;
   whatsappPhone?: string;
+  registrationNumber?: string;
 }
 
 export interface ListFarmersQuery {

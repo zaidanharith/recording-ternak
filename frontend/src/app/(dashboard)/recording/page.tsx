@@ -182,7 +182,7 @@ function RecordingPageContent() {
               {sortedData.map((recording) => (
                 <TableRow key={recording.id}>
                   <TableCell>
-                    <RecordingPhotoPreview photoUrl={recording.photoUrl} />
+                    <RecordingPhotoPreview photoUrls={recording.photoUrls} />
                   </TableCell>
                   <TableCell className="font-medium">
                     {recording.goat?.earTagNumber}

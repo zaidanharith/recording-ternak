@@ -57,6 +57,7 @@ const stripPlaceholder = (value?: string): string => (!value || value === "-" ? 
 
 const farmerSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
+  registrationNumber: z.string().optional(),
   dusun: z.string().optional(),
   rt: z.string().optional(),
   rw: z.string().optional(),
@@ -82,6 +83,7 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: farmer?.name ?? "",
+      registrationNumber: stripPlaceholder(farmer?.registrationNumber ?? undefined),
       dusun:
         resolveDusunOption(farmer?.dusun) === "Lainnya"
           ? resolveDusunCustomValue(farmer?.dusun)
@@ -109,7 +111,11 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
     }
 
     try {
-      const payload = { ...values, desa: DESA_TETAP };
+      const payload = {
+        ...values,
+        desa: DESA_TETAP,
+        registrationNumber: values.registrationNumber?.trim() || undefined,
+      };
       const saved = isEdit
         ? await updateFarmer(farmer.id, payload)
         : await createFarmer(payload);
@@ -153,6 +159,19 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                   <FormLabel required>Nama</FormLabel>
                   <FormControl>
                     <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="registrationNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>No. Registrasi</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Contoh: REG-001" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

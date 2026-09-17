@@ -46,9 +46,14 @@ exports.getFarmer = async (req, res) => {
   }
 };
 
+const farmerDuplicateMessage = (error) =>
+  String(error.meta?.target ?? '').includes('registration_number')
+    ? 'Nomor registrasi sudah digunakan.'
+    : 'Nomor WhatsApp sudah terdaftar.';
+
 exports.createFarmer = async (req, res) => {
   try {
-    const { name, desa, dusun, rt, rw, whatsappPhone } = req.body;
+    const { name, desa, dusun, rt, rw, whatsappPhone, registrationNumber } = req.body;
 
     if (!name || !whatsappPhone) {
       return res.status(400).json({
@@ -57,7 +62,7 @@ exports.createFarmer = async (req, res) => {
       });
     }
 
-    const farmer = await farmerRepository.createFarmer({ name, desa, dusun, rt, rw, whatsappPhone });
+    const farmer = await farmerRepository.createFarmer({ name, desa, dusun, rt, rw, whatsappPhone, registrationNumber });
     await dashboardSyncService.pushFarmerUpsert(farmer);
 
     return res.status(201).json({
@@ -67,7 +72,7 @@ exports.createFarmer = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Nomor WhatsApp sudah terdaftar.' });
+      return res.status(409).json({ success: false, message: farmerDuplicateMessage(error) });
     }
     console.error('Create Farmer Error:', error);
     return res.status(500).json({
@@ -80,7 +85,7 @@ exports.createFarmer = async (req, res) => {
 
 exports.updateFarmer = async (req, res) => {
   try {
-    const { name, desa, dusun, rt, rw, whatsappPhone } = req.body;
+    const { name, desa, dusun, rt, rw, whatsappPhone, registrationNumber } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
     if (desa) updateData.desa = desa;
@@ -88,6 +93,7 @@ exports.updateFarmer = async (req, res) => {
     if (rt) updateData.rt = rt;
     if (rw) updateData.rw = rw;
     if (whatsappPhone) updateData.whatsappPhone = whatsappPhone;
+    if (registrationNumber !== undefined) updateData.registrationNumber = registrationNumber || null;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ success: false, message: 'Tidak ada data yang diubah.' });
@@ -103,7 +109,7 @@ exports.updateFarmer = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'Nomor WhatsApp sudah terdaftar.' });
+      return res.status(409).json({ success: false, message: farmerDuplicateMessage(error) });
     }
     if (error.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Peternak tidak ditemukan.' });

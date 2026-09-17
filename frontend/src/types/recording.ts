@@ -22,8 +22,8 @@ export interface Recording {
   notes: string;
   status: RecordingStatus;
   source: RecordingSource;
-  photoUrl: string | null;
-  photoPublicId: string | null;
+  photoUrls: string[];
+  photoPublicIds: string[];
   createdAt: string;
 }
 
@@ -39,8 +39,8 @@ export interface CreateRecordingInput {
   sold?: SoldStatus;
   condition?: GoatCondition;
   notes?: string;
-  photoUrl?: string;
-  photoPublicId?: string;
+  photoUrls?: string[];
+  photoPublicIds?: string[];
 }
 
 export interface UpdateRecordingInput {
@@ -54,8 +54,8 @@ export interface UpdateRecordingInput {
   sold?: SoldStatus;
   condition?: GoatCondition;
   notes?: string;
-  photoUrl?: string;
-  photoPublicId?: string;
+  photoUrls?: string[];
+  photoPublicIds?: string[];
   status?: RecordingStatus;
 }
 

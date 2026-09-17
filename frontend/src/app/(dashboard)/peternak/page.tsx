@@ -78,7 +78,7 @@ export default function PeternakPage() {
       />
 
       <Input
-        placeholder="Cari nama atau nomor WhatsApp..."
+        placeholder="Cari nama, nomor WhatsApp, atau no. registrasi..."
         value={search}
         onChange={(event) => {
           setSearch(event.target.value);
@@ -108,6 +108,7 @@ export default function PeternakPage() {
                 >
                   Nama
                 </SortableTableHead>
+                <TableHead>No. Registrasi</TableHead>
                 <SortableTableHead
                   sortKey="whatsappPhone"
                   currentKey={sortKey}
@@ -137,6 +138,9 @@ export default function PeternakPage() {
                     >
                       {farmer.name}
                     </Link>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {farmer.registrationNumber ?? "-"}
                   </TableCell>
                   <TableCell>{farmer.whatsappPhone}</TableCell>
                   <TableCell className="text-muted-foreground">

@@ -38,7 +38,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { GoatSelect } from "@/features/recordings/components/goat-select";
-import { PhotoUploadField } from "@/features/recordings/components/photo-upload-field";
+import { MultiPhotoUploadField, type PhotoValue } from "@/components/common/multi-photo-upload-field";
 import { createRecording, updateRecording } from "@/services/recording.service";
 import type {
   GoatCondition,
@@ -80,9 +80,11 @@ export function RecordingFormDialog({
   trigger,
 }: RecordingFormDialogProps) {
   const [open, setOpen] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState(recording?.photoUrl ?? "");
-  const [photoPublicId, setPhotoPublicId] = useState(
-    recording?.photoPublicId ?? "",
+  const [photos, setPhotos] = useState<PhotoValue[]>(() =>
+    (recording?.photoUrls ?? []).map((url, index) => ({
+      url,
+      publicId: recording?.photoPublicIds?.[index] ?? url,
+    })),
   );
   const [useToday, setUseToday] = useState(
     !recording || recording.recordingDate.slice(0, 10) === todayIso(),
@@ -119,8 +121,8 @@ export function RecordingFormDialog({
       const payload = {
         ...values,
         recordingDate: useToday ? todayIso() : values.recordingDate,
-        photoUrl: photoUrl || undefined,
-        photoPublicId: photoPublicId || undefined,
+        photoUrls: photos.map((photo) => photo.url),
+        photoPublicIds: photos.map((photo) => photo.publicId),
       };
 
       const saved = isEdit
@@ -136,6 +138,7 @@ export function RecordingFormDialog({
       setOpen(false);
       form.reset();
       setUseToday(!recording);
+      setPhotos([]);
     } catch (error) {
       const message =
         isAxiosError(error) && error.response?.data?.message
@@ -400,13 +403,7 @@ export function RecordingFormDialog({
 
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium">Foto Kondisi Kambing</p>
-              <PhotoUploadField
-                photoUrl={photoUrl}
-                onChange={(result) => {
-                  setPhotoUrl(result.photoUrl);
-                  setPhotoPublicId(result.photoPublicId);
-                }}
-              />
+              <MultiPhotoUploadField photos={photos} onChange={setPhotos} />
             </div>
 
             <DialogFooter>

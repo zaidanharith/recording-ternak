@@ -9,16 +9,17 @@ datasource db {
 }
 
 model Farmer {
-  id            String   @id @default(uuid())
-  name          String
-  desa          String   @default("Besuki")
-  dusun         String   @default("-")
-  rt            String   @default("-")
-  rw            String   @default("-")
-  whatsappPhone String   @unique @map("whatsapp_phone")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  goats         Goat[]
+  id                 String   @id @default(uuid())
+  name               String
+  desa               String   @default("Besuki")
+  dusun              String   @default("-")
+  rt                 String   @default("-")
+  rw                 String   @default("-")
+  whatsappPhone      String   @unique @map("whatsapp_phone")
+  registrationNumber String?  @unique @map("registration_number")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  goats              Goat[]
 
   @@map("farmer")
 }
@@ -38,19 +39,30 @@ enum StatusTernak {
 }
 
 model Goat {
-  id               String            @id @default(uuid())
-  earTagNumber     Int               @unique @map("ear_tag_number")
-  farmerId         String            @map("farmer_id")
-  farmer           Farmer            @relation(fields: [farmerId], references: [id], onDelete: Cascade)
-  jenisKelamin     JenisKelamin?     @map("jenis_kelamin")
-  rasRumpun        String?           @map("ras_rumpun")
-  birthDate        DateTime?         @map("birth_date") @db.Date
-  status           StatusTernak      @default(HIDUP)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  recordings       Recording[]
-  laporanKematian  LaporanKematian[]
-  laporanKelahiran LaporanKelahiran?
+  id                 String            @id @default(uuid())
+  earTagNumber       Int               @unique @map("ear_tag_number")
+  registrationNumber String?           @unique @map("registration_number")
+  farmerId           String            @map("farmer_id")
+  farmer             Farmer            @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  jenisKelamin       JenisKelamin?     @map("jenis_kelamin")
+  rasRumpun          String?           @map("ras_rumpun")
+  birthDate          DateTime?         @map("birth_date") @db.Date
+  specialTraits      String?           @map("special_traits")
+  origin             String?           @map("origin")
+  enteredAt          DateTime?         @map("entered_at") @db.Date
+  purchasePrice      Int?              @map("purchase_price")
+  lengthCm           Int?              @map("length_cm")
+  heightCm           Int?              @map("height_cm")
+  lactationCount     Int?              @map("lactation_count")
+  initialCondition   GoatCondition?    @map("initial_condition")
+  photoUrls          String[]          @default([]) @map("photo_urls")
+  photoPublicIds     String[]          @default([]) @map("photo_public_ids")
+  status             StatusTernak      @default(HIDUP)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  recordings         Recording[]
+  laporanKematian    LaporanKematian[]
+  laporanKelahiran   LaporanKelahiran?
 
   @@index([farmerId])
   @@map("goat")
@@ -137,8 +149,8 @@ model Recording {
   notes          String          @default("-")
   status         RecordingStatus @default(PERLU_REVIEW)
   source         RecordingSource @default(WA)
-  photoUrl       String?         @map("photo_url")
-  photoPublicId  String?         @map("photo_public_id")
+  photoUrls      String[]        @default([]) @map("photo_urls")
+  photoPublicIds String[]        @default([]) @map("photo_public_ids")
   createdAt      DateTime        @default(now())
 
   @@index([goatId])

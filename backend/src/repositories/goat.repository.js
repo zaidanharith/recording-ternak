@@ -70,8 +70,35 @@ const findGoatByEarTagNumberOrNull = async (earTagNumber) => {
   return await prisma.goat.findUnique({ where: { earTagNumber: parsed } });
 };
 
-const listGoats = async ({ farmerId, page, limit }) => {
-  const where = { ...(farmerId && { farmerId }) };
+/**
+ * Bangun filter pencarian bebas untuk kambing: no. telinga (exact, kalau input angka),
+ * no. registrasi, bangsa/jenis, serta nama/no. WA/no. registrasi peternaknya.
+ */
+const buildGoatSearchFilter = (search) => {
+  if (!search) return undefined;
+  const trimmed = search.trim();
+  if (!trimmed) return undefined;
+
+  const parsedEarTag = Number(trimmed);
+  const isEarTag = Number.isInteger(parsedEarTag);
+
+  return {
+    OR: [
+      ...(isEarTag ? [{ earTagNumber: parsedEarTag }] : []),
+      { registrationNumber: { contains: trimmed, mode: 'insensitive' } },
+      { rasRumpun: { contains: trimmed, mode: 'insensitive' } },
+      { farmer: { name: { contains: trimmed, mode: 'insensitive' } } },
+      { farmer: { whatsappPhone: { contains: trimmed } } },
+      { farmer: { registrationNumber: { contains: trimmed, mode: 'insensitive' } } },
+    ],
+  };
+};
+
+const listGoats = async ({ farmerId, search, page, limit }) => {
+  const where = {
+    ...(farmerId && { farmerId }),
+    ...buildGoatSearchFilter(search),
+  };
 
   const [goats, total] = await Promise.all([
     prisma.goat.findMany({
@@ -94,9 +121,9 @@ const findGoatById = async (id) => {
   });
 };
 
-const createGoat = async ({ earTagNumber, farmerId }) => {
+const createGoat = async ({ earTagNumber, farmerId, ...rest }) => {
   return await prisma.goat.create({
-    data: { earTagNumber: parseEarTagNumber(earTagNumber), farmerId },
+    data: { earTagNumber: parseEarTagNumber(earTagNumber), farmerId, ...rest },
     include: { farmer: true },
   });
 };

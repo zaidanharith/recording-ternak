@@ -87,30 +87,36 @@ describe('listRecordings', () => {
 });
 
 describe('updateRecording photo replacement', () => {
-  it('deletes the old Cloudinary asset when photoUrl changes and an old photoPublicId exists', async () => {
+  it('deletes Cloudinary assets removed from photoPublicIds', async () => {
     recordingRepository.findRecordingById.mockResolvedValue({
-      id: 'r1', photoUrl: 'https://res.cloudinary.com/demo/old.jpg', photoPublicId: 'recording-ternak/dashboard/old',
+      id: 'r1',
+      photoUrls: ['https://res.cloudinary.com/demo/old.jpg', 'https://res.cloudinary.com/demo/kept.jpg'],
+      photoPublicIds: ['recording-ternak/dashboard/old', 'recording-ternak/dashboard/kept'],
     });
-    recordingRepository.updateRecording.mockResolvedValue({ id: 'r1', photoUrl: 'https://res.cloudinary.com/demo/new.jpg' });
+    recordingRepository.updateRecording.mockResolvedValue({ id: 'r1', photoUrls: ['https://res.cloudinary.com/demo/kept.jpg'] });
 
     const req = {
       params: { id: 'r1' },
-      body: { photoUrl: 'https://res.cloudinary.com/demo/new.jpg', photoPublicId: 'recording-ternak/dashboard/new' },
+      body: {
+        photoUrls: ['https://res.cloudinary.com/demo/kept.jpg'],
+        photoPublicIds: ['recording-ternak/dashboard/kept'],
+      },
     };
     const res = buildRes();
 
     await updateRecording(req, res);
 
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledTimes(1);
     expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/dashboard/old');
     expect(recordingRepository.updateRecording).toHaveBeenCalledWith('r1', expect.objectContaining({
-      photoUrl: 'https://res.cloudinary.com/demo/new.jpg',
-      photoPublicId: 'recording-ternak/dashboard/new',
+      photoUrls: ['https://res.cloudinary.com/demo/kept.jpg'],
+      photoPublicIds: ['recording-ternak/dashboard/kept'],
     }));
   });
 
-  it('does not call deleteImage when photoUrl is unchanged', async () => {
+  it('does not call deleteImage when photoPublicIds is unchanged', async () => {
     recordingRepository.findRecordingById.mockResolvedValue({
-      id: 'r1', photoUrl: 'https://res.cloudinary.com/demo/same.jpg', photoPublicId: 'recording-ternak/dashboard/same',
+      id: 'r1', photoUrls: ['https://res.cloudinary.com/demo/same.jpg'], photoPublicIds: ['recording-ternak/dashboard/same'],
     });
     recordingRepository.updateRecording.mockResolvedValue({ id: 'r1' });
 
@@ -124,8 +130,10 @@ describe('updateRecording photo replacement', () => {
 });
 
 describe('deleteRecording', () => {
-  it('deletes the Cloudinary asset when the recording has a photoPublicId', async () => {
-    recordingRepository.findRecordingById.mockResolvedValue({ id: 'r1', photoPublicId: 'recording-ternak/dashboard/old' });
+  it('deletes every Cloudinary asset when the recording has photoPublicIds', async () => {
+    recordingRepository.findRecordingById.mockResolvedValue({
+      id: 'r1', photoPublicIds: ['recording-ternak/dashboard/old', 'recording-ternak/dashboard/old2'],
+    });
     recordingRepository.deleteRecording.mockResolvedValue({ id: 'r1' });
 
     const req = { params: { id: 'r1' } };
@@ -135,11 +143,12 @@ describe('deleteRecording', () => {
 
     expect(recordingRepository.deleteRecording).toHaveBeenCalledWith('r1');
     expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/dashboard/old');
+    expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('recording-ternak/dashboard/old2');
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('skips Cloudinary cleanup when there is no photoPublicId', async () => {
-    recordingRepository.findRecordingById.mockResolvedValue({ id: 'r1', photoPublicId: null });
+  it('skips Cloudinary cleanup when there are no photoPublicIds', async () => {
+    recordingRepository.findRecordingById.mockResolvedValue({ id: 'r1', photoPublicIds: [] });
     recordingRepository.deleteRecording.mockResolvedValue({ id: 'r1' });
 
     const req = { params: { id: 'r1' } };

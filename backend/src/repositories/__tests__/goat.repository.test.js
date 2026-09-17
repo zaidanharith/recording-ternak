@@ -4,10 +4,11 @@ jest.mock('../../lib/prisma', () => ({
   goat: {
     findMany: jest.fn(),
     aggregate: jest.fn(),
+    count: jest.fn(),
   },
 }));
 
-const { exportGoats, getNextEarTagNumber } = require('../goat.repository');
+const { exportGoats, getNextEarTagNumber, listGoats } = require('../goat.repository');
 
 describe('exportGoats', () => {
   it('applies a farmerId filter, caps rows, and sorts by createdAt', async () => {
@@ -52,6 +53,29 @@ describe('exportGoats', () => {
     const callArgs = prisma.goat.findMany.mock.calls[0][0];
     expect(callArgs.where.createdAt.gte.toISOString().slice(0, 10)).toBe('2026-07-01');
     expect(callArgs.where.createdAt.lt.toISOString().slice(0, 10)).toBe('2026-07-11');
+  });
+});
+
+describe('listGoats search', () => {
+  beforeEach(() => {
+    prisma.goat.findMany.mockResolvedValue([]);
+    prisma.goat.count.mockResolvedValue(0);
+  });
+
+  it('matches earTagNumber exactly when the search term is numeric', async () => {
+    await listGoats({ search: '12', page: 1, limit: 20 });
+
+    const { where } = prisma.goat.findMany.mock.calls[0][0];
+    expect(where.OR).toContainEqual({ earTagNumber: 12 });
+  });
+
+  it('searches registrationNumber and farmer fields when the term is not numeric', async () => {
+    await listGoats({ search: 'REG-1', page: 1, limit: 20 });
+
+    const { where } = prisma.goat.findMany.mock.calls[0][0];
+    expect(where.OR).not.toContainEqual(expect.objectContaining({ earTagNumber: expect.anything() }));
+    expect(where.OR).toContainEqual({ registrationNumber: { contains: 'REG-1', mode: 'insensitive' } });
+    expect(where.OR).toContainEqual({ farmer: { name: { contains: 'REG-1', mode: 'insensitive' } } });
   });
 });
 

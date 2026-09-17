@@ -51,8 +51,8 @@ const createRecording = async (recordingData) => {
       sold: parseSoldStatus(recordingData.terjual),
       condition: parseGoatCondition(recordingData.kondisi),
       notes: recordingData.catatan || '-',
-      photoUrl: recordingData.photoUrl || null,
-      photoPublicId: recordingData.photoPublicId || null,
+      photoUrls: recordingData.photoUrl ? [recordingData.photoUrl] : [],
+      photoPublicIds: recordingData.photoPublicId ? [recordingData.photoPublicId] : [],
     }
   });
 };
@@ -97,7 +97,7 @@ const getAllDataForQuery = async () => {
 
 const createManualRecording = async ({
   goatId, senderName, matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
-  matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId,
+  matingNumber, saleTarget, sold, condition, notes, photoUrls, photoPublicIds,
 }) => {
   return await prisma.recording.create({
     data: {
@@ -113,8 +113,8 @@ const createManualRecording = async ({
       sold: parseSoldStatus(sold),
       condition: parseGoatCondition(condition),
       notes: notes || '-',
-      photoUrl: photoUrl || null,
-      photoPublicId: photoPublicId || null,
+      photoUrls: photoUrls ?? [],
+      photoPublicIds: photoPublicIds ?? [],
       status: 'FINAL',
       source: 'MANUAL',
     },

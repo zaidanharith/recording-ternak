@@ -5,7 +5,7 @@ jest.mock('../../repositories/goat.repository');
 const exportService = require('../../services/export.service');
 jest.mock('../../services/export.service');
 
-const { createGoat, getNextEarTagNumber, getGoat, exportGoats } = require('../goat.controller');
+const { createGoat, updateGoat, getNextEarTagNumber, getGoat, exportGoats } = require('../goat.controller');
 
 const buildRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -43,6 +43,70 @@ describe('createGoat', () => {
     await createGoat(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 409 with a registration-specific message when registrationNumber is duplicated', async () => {
+    goatRepository.createGoat.mockRejectedValue({ code: 'P2002', meta: { target: ['goat_registration_number_key'] } });
+    const req = { body: { earTagNumber: '12', farmerId: 'f1', registrationNumber: 'REG1' } };
+    const res = buildRes();
+
+    await createGoat(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Nomor registrasi sudah digunakan.' })
+    );
+  });
+
+  it('rejects an invalid jenisKelamin value', async () => {
+    const req = { body: { earTagNumber: '12', farmerId: 'f1', jenisKelamin: 'ENTAH' } };
+    const res = buildRes();
+
+    await createGoat(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(goatRepository.createGoat).not.toHaveBeenCalled();
+  });
+
+  it('passes new detail fields through to the repository', async () => {
+    goatRepository.createGoat.mockResolvedValue({ id: 'g1' });
+    const req = {
+      body: {
+        earTagNumber: '12', farmerId: 'f1', registrationNumber: 'REG1',
+        jenisKelamin: 'JANTAN', rasRumpun: 'Etawa', birthDate: '2024-01-01',
+      },
+    };
+    const res = buildRes();
+
+    await createGoat(req, res);
+
+    expect(goatRepository.createGoat).toHaveBeenCalledWith(
+      expect.objectContaining({
+        registrationNumber: 'REG1', jenisKelamin: 'JANTAN', rasRumpun: 'Etawa', birthDate: new Date('2024-01-01'),
+      })
+    );
+  });
+});
+
+describe('updateGoat', () => {
+  it('rejects an invalid initialCondition value', async () => {
+    const req = { params: { id: 'g1' }, body: { initialCondition: 'LUMAYAN' } };
+    const res = buildRes();
+
+    await updateGoat(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(goatRepository.updateGoat).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed enteredAt date', async () => {
+    const req = { params: { id: 'g1' }, body: { enteredAt: 'not-a-date' } };
+    const res = buildRes();
+
+    await updateGoat(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(goatRepository.updateGoat).not.toHaveBeenCalled();
   });
 });
 

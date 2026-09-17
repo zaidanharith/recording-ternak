@@ -74,7 +74,7 @@ exports.createRecording = async (req, res) => {
   try {
     const {
       goatId, matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId,
+      matingNumber, saleTarget, sold, condition, notes, photoUrls, photoPublicIds,
     } = req.body;
 
     if (!goatId) {
@@ -85,7 +85,7 @@ exports.createRecording = async (req, res) => {
       goatId,
       senderName: req.user.name,
       matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId,
+      matingNumber, saleTarget, sold, condition, notes, photoUrls, photoPublicIds,
     });
 
     return res.status(201).json({
@@ -113,7 +113,7 @@ exports.updateRecording = async (req, res) => {
   try {
     const {
       matingDate, birthDate, recordingDate, maleKidCount, femaleKidCount,
-      matingNumber, saleTarget, sold, condition, notes, photoUrl, photoPublicId, status,
+      matingNumber, saleTarget, sold, condition, notes, photoUrls, photoPublicIds, status,
     } = req.body;
 
     if (status && !RECORDING_STATUSES.includes(status)) {
@@ -134,27 +134,24 @@ exports.updateRecording = async (req, res) => {
     if (sold !== undefined) updateData.sold = recordingRepository.parseSoldStatus(sold);
     if (condition !== undefined) updateData.condition = recordingRepository.parseGoatCondition(condition);
     if (notes !== undefined) updateData.notes = notes;
-    if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
-    if (photoPublicId !== undefined) updateData.photoPublicId = photoPublicId;
+    if (photoUrls !== undefined) updateData.photoUrls = photoUrls;
+    if (photoPublicIds !== undefined) updateData.photoPublicIds = photoPublicIds;
     if (status) updateData.status = status;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ success: false, message: 'Tidak ada data yang diubah.' });
     }
 
-    let oldPhotoPublicId = null;
-    if (photoUrl !== undefined) {
+    let removedPublicIds = [];
+    if (photoPublicIds !== undefined) {
       const existing = await recordingRepository.findRecordingById(req.params.id);
-      if (existing && existing.photoUrl !== photoUrl && existing.photoPublicId) {
-        oldPhotoPublicId = existing.photoPublicId;
-      }
+      const keep = new Set(photoPublicIds);
+      removedPublicIds = (existing?.photoPublicIds ?? []).filter((id) => !keep.has(id));
     }
 
     const recording = await recordingRepository.updateRecording(req.params.id, updateData);
 
-    if (oldPhotoPublicId) {
-      cloudinaryService.deleteImage(oldPhotoPublicId);
-    }
+    removedPublicIds.forEach((publicId) => cloudinaryService.deleteImage(publicId));
 
     return res.status(200).json({
       success: true,
@@ -182,9 +179,7 @@ exports.deleteRecording = async (req, res) => {
     const existing = await recordingRepository.findRecordingById(req.params.id);
     await recordingRepository.deleteRecording(req.params.id);
 
-    if (existing && existing.photoPublicId) {
-      cloudinaryService.deleteImage(existing.photoPublicId);
-    }
+    (existing?.photoPublicIds ?? []).forEach((publicId) => cloudinaryService.deleteImage(publicId));
 
     return res.status(200).json({ success: true, message: 'Recording berhasil dihapus.' });
   } catch (error) {

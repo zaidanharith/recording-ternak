@@ -37,6 +37,22 @@ describe('createFarmer', () => {
     await createFarmer(req, res);
 
     expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Nomor WhatsApp sudah terdaftar.' })
+    );
+  });
+
+  it('returns 409 with a registration-specific message when registrationNumber is duplicated', async () => {
+    farmerRepository.createFarmer.mockRejectedValue({ code: 'P2002', meta: { target: ['farmer_registration_number_key'] } });
+    const req = { body: { name: 'Pak Budi', whatsappPhone: '628123', registrationNumber: 'REG1' } };
+    const res = buildRes();
+
+    await createFarmer(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Nomor registrasi sudah digunakan.' })
+    );
   });
 });
 

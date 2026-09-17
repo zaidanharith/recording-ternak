@@ -12,6 +12,7 @@ import { PaginationBar } from "@/components/common/pagination-bar";
 import { SortableTableHead } from "@/components/common/sortable-table-head";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -26,6 +27,7 @@ import { BeritaAcaraDialog } from "@/features/goats/components/berita-acara-dial
 import { GoatExportDialog } from "@/features/goats/components/goat-export-dialog";
 import { GoatFormDialog } from "@/features/goats/components/goat-form-dialog";
 import { useAsync } from "@/hooks/use-async";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useSortableData } from "@/hooks/use-sortable-data";
 import { canManageData } from "@/lib/rbac";
 import { deleteGoat, listGoats } from "@/services/goat.service";
@@ -45,10 +47,12 @@ function KambingPageContent() {
   const searchParams = useSearchParams();
   const farmerId = searchParams.get("farmerId") ?? undefined;
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
 
   const fetcher = useCallback(
-    () => listGoats({ page, limit: 20, farmerId }),
-    [page, farmerId],
+    () => listGoats({ page, limit: 20, farmerId, search: debouncedSearch }),
+    [page, farmerId, debouncedSearch],
   );
   const { data, isLoading, refetch } = useAsync(fetcher);
 
@@ -88,6 +92,16 @@ function KambingPageContent() {
         }
       />
 
+      <Input
+        placeholder="Cari no. telinga, no. registrasi, bangsa, atau peternak..."
+        value={search}
+        onChange={(event) => {
+          setSearch(event.target.value);
+          setPage(1);
+        }}
+        className="mb-4 max-w-sm"
+      />
+
       {farmerId && (
         <div className="mb-4 flex items-center gap-2">
           <Badge variant="secondary">
@@ -125,6 +139,7 @@ function KambingPageContent() {
                 >
                   No. Telinga
                 </SortableTableHead>
+                <TableHead>No. Registrasi</TableHead>
                 <SortableTableHead
                   sortKey="farmer"
                   currentKey={sortKey}
@@ -148,6 +163,9 @@ function KambingPageContent() {
               {sortedData.map((goat) => (
                 <TableRow key={goat.id}>
                   <TableCell className="font-medium">{goat.earTagNumber}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {goat.registrationNumber ?? "-"}
+                  </TableCell>
                   <TableCell>{goat.farmer?.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(goat.createdAt).toLocaleDateString("id-ID")}

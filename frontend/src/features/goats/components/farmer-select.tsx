@@ -20,7 +20,8 @@ interface FarmerSelectProps {
 }
 
 function farmerLabel(farmer: Farmer) {
-  return `${farmer.name} — ${farmer.whatsappPhone}`;
+  const reg = farmer.registrationNumber ? `${farmer.registrationNumber} — ` : "";
+  return `${reg}${farmer.name} — ${farmer.whatsappPhone}`;
 }
 
 export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
