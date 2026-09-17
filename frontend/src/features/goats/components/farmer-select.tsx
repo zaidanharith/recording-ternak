@@ -11,17 +11,11 @@ import {
 } from "@/components/ui/select";
 import { useAsync } from "@/hooks/use-async";
 import { listFarmers } from "@/services/farmer.service";
-import type { Farmer } from "@/types/farmer";
 
 interface FarmerSelectProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-}
-
-function farmerLabel(farmer: Farmer) {
-  const reg = farmer.registrationNumber ? `${farmer.registrationNumber} — ` : "";
-  return `${reg}${farmer.name} — ${farmer.whatsappPhone}`;
 }
 
 export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
@@ -42,14 +36,14 @@ export function FarmerSelect({ value, onChange, disabled }: FarmerSelectProps) {
         <SelectValue placeholder={placeholder}>
           {(current: string | null) => {
             const farmer = data?.farmers.find((item) => item.id === current);
-            return farmer ? farmerLabel(farmer) : placeholder;
+            return farmer?.name ?? placeholder;
           }}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {data?.farmers.map((farmer) => (
           <SelectItem key={farmer.id} value={farmer.id}>
-            {farmerLabel(farmer)}
+            {farmer.name}
           </SelectItem>
         ))}
       </SelectContent>

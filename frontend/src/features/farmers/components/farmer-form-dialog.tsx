@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { whatsappPhoneSchema } from "@/lib/validation";
+import { digitsOnly, normalizeWhatsappPhone, whatsappPhoneSchema } from "@/lib/validation";
 import { createFarmer, updateFarmer } from "@/services/farmer.service";
 import type { Farmer } from "@/types/farmer";
 
@@ -171,7 +171,7 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                 <FormItem>
                   <FormLabel>No. Registrasi</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: REG-001" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +184,12 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                 <FormItem>
                   <FormLabel required>Nomor WhatsApp</FormLabel>
                   <FormControl>
-                    <Input placeholder="62812xxxxxxx" {...field} />
+                    <Input
+                      inputMode="numeric"
+                      placeholder="62812xxxxxxx"
+                      {...field}
+                      onChange={(e) => field.onChange(normalizeWhatsappPhone(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -233,7 +238,12 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                   <FormItem>
                     <FormLabel>RT</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: 005" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        placeholder="Contoh: 005"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -246,7 +256,12 @@ export function FarmerFormDialog({ farmer, onSaved, trigger }: FarmerFormDialogP
                   <FormItem>
                     <FormLabel>RW</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: 002" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        placeholder="Contoh: 002"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

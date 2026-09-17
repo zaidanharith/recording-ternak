@@ -33,12 +33,14 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { FarmerSelect } from "@/features/goats/components/farmer-select";
+import { digitsOnly } from "@/lib/validation";
 import { createGoat, getNextEarTagNumber, updateGoat } from "@/services/goat.service";
 import type { Goat, GoatCondition } from "@/types/goat";
 
@@ -213,7 +215,7 @@ export function GoatFormDialog({
                 <FormItem>
                   <FormLabel>No. Registrasi</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: KMB-001" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,7 +228,12 @@ export function GoatFormDialog({
                 <FormItem>
                   <FormLabel required>Nomor Telinga/Ternak</FormLabel>
                   <FormControl>
-                    <Input inputMode="numeric" {...field} disabled={autoNumber} />
+                    <Input
+                      inputMode="numeric"
+                      {...field}
+                      onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      disabled={autoNumber}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -308,7 +315,11 @@ export function GoatFormDialog({
                     <FormItem>
                       <FormLabel>Umur</FormLabel>
                       <FormControl>
-                        <Input inputMode="numeric" {...field} />
+                        <Input
+                          inputMode="numeric"
+                          {...field}
+                          onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -381,8 +392,12 @@ export function GoatFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Asal Ternak</FormLabel>
+                  <FormDescription>
+                    Sumber ternak ini didapat, misalnya dibeli, hibah/bantuan, atau lahir dari
+                    indukan sendiri.
+                  </FormDescription>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Contoh: Dibeli dari pasar hewan" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -410,7 +425,11 @@ export function GoatFormDialog({
                   <FormItem>
                     <FormLabel>Harga Beli (Rp)</FormLabel>
                     <FormControl>
-                      <Input inputMode="numeric" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -423,7 +442,11 @@ export function GoatFormDialog({
                   <FormItem>
                     <FormLabel>Laktasi Ke</FormLabel>
                     <FormControl>
-                      <Input inputMode="numeric" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -436,7 +459,11 @@ export function GoatFormDialog({
                   <FormItem>
                     <FormLabel>Panjang (cm)</FormLabel>
                     <FormControl>
-                      <Input inputMode="numeric" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -449,7 +476,11 @@ export function GoatFormDialog({
                   <FormItem>
                     <FormLabel>Tinggi (cm)</FormLabel>
                     <FormControl>
-                      <Input inputMode="numeric" {...field} />
+                      <Input
+                        inputMode="numeric"
+                        {...field}
+                        onChange={(e) => field.onChange(digitsOnly(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
