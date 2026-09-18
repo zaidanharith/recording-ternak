@@ -15,6 +15,8 @@ const SOLD_LABELS = { YA: 'Ya', TIDAK: 'Tidak' };
 const CONDITION_LABELS = { SEHAT: 'Sehat', SAKIT: 'Sakit' };
 const SOURCE_LABELS = { WA: 'WhatsApp', MANUAL: 'Manual' };
 const STATUS_LABELS = { PERLU_REVIEW: 'Perlu Review', FINAL: 'Final' };
+const JENIS_KELAMIN_LABELS = { JANTAN: 'Jantan', BETINA: 'Betina' };
+const GOAT_STATUS_LABELS = { HIDUP: 'Hidup', MATI: 'Mati' };
 
 const RECORDING_VALIDATION_MESSAGES = [
   'Tanggal tidak valid, gunakan format YYYY-MM-DD (contoh: 2026-07-11).',
@@ -243,19 +245,50 @@ exports.exportRecordings = async (req, res) => {
       { header: 'Terjual', key: 'sold', width: 10 },
       { header: 'Sumber', key: 'source', width: 12 },
       { header: 'Status', key: 'status', width: 14 },
+      { header: 'No. Registrasi Kambing', key: 'registrationNumber', width: 20 },
+      { header: 'Jenis Kelamin Kambing', key: 'jenisKelamin', width: 16 },
+      { header: 'Ras/Rumpun', key: 'rasRumpun', width: 16 },
+      { header: 'Tanggal Lahir Kambing', key: 'goatBirthDate', width: 18 },
+      { header: 'Ciri Khusus', key: 'specialTraits', width: 24 },
+      { header: 'Asal', key: 'origin', width: 16 },
+      { header: 'Tanggal Masuk', key: 'enteredAt', width: 16 },
+      { header: 'Harga Beli', key: 'purchasePrice', width: 14 },
+      { header: 'Panjang (cm)', key: 'lengthCm', width: 12 },
+      { header: 'Tinggi (cm)', key: 'heightCm', width: 12 },
+      { header: 'Jumlah Laktasi', key: 'lactationCount', width: 14 },
+      { header: 'Kondisi Awal Kambing', key: 'initialCondition', width: 16 },
+      { header: 'Status Kambing', key: 'goatStatus', width: 14 },
+      { header: 'Foto Kambing', key: 'goatPhotoUrls', width: 30 },
     ];
 
-    const rows = recordings.map((recording) => ({
-      earTagNumber: recording.goat?.earTagNumber ?? '-',
-      farmerName: recording.goat?.farmer?.name ?? '-',
-      birthDate: exportService.formatDateId(recording.birthDate),
-      condition: recording.condition ? CONDITION_LABELS[recording.condition] : '-',
-      maleKidCount: recording.maleKidCount,
-      femaleKidCount: recording.femaleKidCount,
-      sold: recording.sold ? SOLD_LABELS[recording.sold] : '-',
-      source: SOURCE_LABELS[recording.source],
-      status: STATUS_LABELS[recording.status],
-    }));
+    const rows = recordings.map((recording) => {
+      const goat = recording.goat ?? {};
+      return {
+        earTagNumber: goat.earTagNumber ?? '-',
+        farmerName: goat.farmer?.name ?? '-',
+        birthDate: exportService.formatDateId(recording.birthDate),
+        condition: recording.condition ? CONDITION_LABELS[recording.condition] : '-',
+        maleKidCount: recording.maleKidCount,
+        femaleKidCount: recording.femaleKidCount,
+        sold: recording.sold ? SOLD_LABELS[recording.sold] : '-',
+        source: SOURCE_LABELS[recording.source],
+        status: STATUS_LABELS[recording.status],
+        registrationNumber: goat.registrationNumber ?? '-',
+        jenisKelamin: goat.jenisKelamin ? JENIS_KELAMIN_LABELS[goat.jenisKelamin] : '-',
+        rasRumpun: goat.rasRumpun ?? '-',
+        goatBirthDate: exportService.formatDateId(goat.birthDate),
+        specialTraits: goat.specialTraits ?? '-',
+        origin: goat.origin ?? '-',
+        enteredAt: exportService.formatDateId(goat.enteredAt),
+        purchasePrice: goat.purchasePrice ?? '-',
+        lengthCm: goat.lengthCm ?? '-',
+        heightCm: goat.heightCm ?? '-',
+        lactationCount: goat.lactationCount ?? '-',
+        initialCondition: goat.initialCondition ? CONDITION_LABELS[goat.initialCondition] : '-',
+        goatStatus: goat.status ? GOAT_STATUS_LABELS[goat.status] : '-',
+        goatPhotoUrls: goat.photoUrls?.length ? goat.photoUrls.join(', ') : '-',
+      };
+    });
 
     await exportService.sendExportFile(res, {
       format,
