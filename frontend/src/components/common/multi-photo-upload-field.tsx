@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { FiUpload, FiX } from "react-icons/fi";
+import { FiCamera, FiUpload, FiX } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ interface MultiPhotoUploadFieldProps {
 
 export function MultiPhotoUploadField({ photos, onChange }: MultiPhotoUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,17 +83,38 @@ export function MultiPhotoUploadField({ photos, onChange }: MultiPhotoUploadFiel
         className="hidden"
         onChange={handleChange}
       />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-fit"
-        disabled={isUploading}
-        onClick={() => inputRef.current?.click()}
-      >
-        <FiUpload className="size-4" />
-        {isUploading ? "Mengunggah..." : "Unggah Foto"}
-      </Button>
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleChange}
+      />
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-fit"
+          disabled={isUploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          <FiUpload className="size-4" />
+          {isUploading ? "Mengunggah..." : "Unggah Foto"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-fit"
+          disabled={isUploading}
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          <FiCamera className="size-4" />
+          Ambil Foto
+        </Button>
+      </div>
     </div>
   );
 }
